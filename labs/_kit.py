@@ -11,9 +11,14 @@ Everything here is glass-box: open it. The labs import four things —
 
 from __future__ import annotations
 
+import json
 import os
 import sys
+import time
+import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -92,10 +97,96 @@ class Meter:
 meter = Meter()
 
 
+# ── observability: one JSON line per request ─────────────────────────────────
+# The meter answers "what did this session cost?". A trace answers the questions
+# you get asked AFTER something goes wrong: which call was slow, what did we
+# actually send, what came back, which one errored. Same idea as Langfuse or
+# OpenTelemetry — one span per LLM call — minus everything you don't need yet.
+#
+#   file    traces.jsonl in the working directory (MAI_TRACE_FILE to move it)
+#   format  JSON Lines: one self-contained JSON object per line, append-only,
+#           so a crash never corrupts it and `tail -f` shows calls live
+#   off     MAI_TRACE=0
+#
+# Read it with:  python labs/traces.py        (or jq, pandas, DuckDB, …)
+
+TRACE_FILE = Path(os.environ.get("MAI_TRACE_FILE", "traces.jsonl"))
+SESSION_ID = uuid.uuid4().hex[:8]   # groups the calls of one process run
+_PREVIEW = 300                      # chars of text kept per message
+
+
+def _clip(text: str) -> str:
+    text = (text or "").replace("\n", " ").strip()
+    return text if len(text) <= _PREVIEW else text[:_PREVIEW] + "…"
+
+
+def trace(record: dict) -> None:
+    """Append one JSON object to the trace file. Never raises — observability
+    that can break the app it observes is worse than none."""
+    if os.environ.get("MAI_TRACE", "1") == "0":
+        return
+    try:
+        record = {"ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                  "session": SESSION_ID, **record}
+        with TRACE_FILE.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+    except Exception:  # noqa: BLE001 — a full disk must not kill the lab
+        pass
+
+
+def _classify_request(messages: list[dict]) -> dict | None:
+    """Tag the last user message with a local HF zero-shot model (labs/classify.py).
+
+    Opt-out with MAI_CLASSIFY=0. Imported lazily and only when enabled, because
+    importing torch costs ~2s — a lab that isn't using this should not pay it."""
+    if os.environ.get("MAI_CLASSIFY", "1") == "0":
+        return None
+    last_user = next((m for m in reversed(messages) if m.get("role") == "user"), None)
+    if not last_user:
+        return None
+    try:
+        from classify import classify  # noqa: PLC0415 — deliberately lazy
+        return classify(last_user.get("content", ""))
+    except Exception:  # noqa: BLE001 — never let tagging break the traced call
+        return None
+
+
+def _traced(label: str, messages: list[dict], kw: dict, started: float,
+            *, output: str = "", usage=None, error: Exception | None = None,
+            streamed: bool = False) -> None:
+    """Build the span for one call and write it."""
+    # Stop the clock BEFORE classifying: tagging is our own bookkeeping, and
+    # folding its ~110ms (plus a ~2s one-time model load) into latency_ms would
+    # make every traced call look slower than the LLM actually was. A metric
+    # that measures the measurer is worse than no metric.
+    latency_ms = round((time.perf_counter() - started) * 1000)
+    classify_started = time.perf_counter()
+    tag = _classify_request(messages)
+    trace({
+        "category": tag["category"] if tag else None,
+        "category_score": tag["score"] if tag else None,
+        "category_low_confidence": tag["low_confidence"] if tag else None,
+        "classify_ms": round((time.perf_counter() - classify_started) * 1000) if tag else None,
+        "label": label,
+        "model": MODEL,
+        "streamed": streamed,
+        "latency_ms": latency_ms,
+        "ok": error is None,
+        "error": f"{type(error).__name__}: {error}" if error else None,
+        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+        "completion_tokens": getattr(usage, "completion_tokens", None),
+        "total_tokens": getattr(usage, "total_tokens", None),
+        "params": {k: v for k, v in kw.items() if k != "messages"},
+        "messages": [{"role": m.get("role"), "content": _clip(m.get("content", ""))}
+                     for m in messages],
+        "output": _clip(output),
+    })
+
+
 def chat(cli: OpenAI, messages: list[dict], label: str = "chat", **kw) -> str:
-    """One metered chat call. kw passes through (max_tokens, response_format, ...).
+    """One metered, traced chat call. kw passes through (max_tokens, response_format, ...).
     Waits out a burst-limit 429 once — eval suites are bursty by nature."""
-    import time as _time
+    started = time.perf_counter()
     for attempt in (1, 2):
         try:
             resp = cli.chat.completions.create(model=MODEL, messages=messages, **kw)
@@ -103,11 +194,14 @@ def chat(cli: OpenAI, messages: list[dict], label: str = "chat", **kw) -> str:
         except Exception as e:  # noqa: BLE001
             if attempt == 1 and "429" in str(e):
                 say("[dim](burst limit — waiting 25s, this is the shared classroom lane)[/dim]")
-                _time.sleep(25)
+                time.sleep(25)
                 continue
+            _traced(label, messages, kw, started, error=e)
             raise
     meter.add(resp.usage, label)
-    return (resp.choices[0].message.content or "").strip()
+    out = (resp.choices[0].message.content or "").strip()
+    _traced(label, messages, kw, started, output=out, usage=resp.usage)
+    return out
 
 
 def stream_chat(cli: OpenAI, messages: list[dict], label: str = "stream",
@@ -119,6 +213,7 @@ def stream_chat(cli: OpenAI, messages: list[dict], label: str = "stream",
     iterates zero chunks and you'd see a blank screen). If no text arrives, we
     say so and re-ask without streaming — the lesson survives either way."""
     out: list[str] = []
+    started = time.perf_counter()
     try:
         stream = cli.chat.completions.create(model=MODEL, messages=messages,
                                              stream=True, **kw)
@@ -133,9 +228,12 @@ def stream_chat(cli: OpenAI, messages: list[dict], label: str = "stream",
                     on_delta(delta)
         if out:
             meter.add(usage, label) if usage else setattr(meter, "calls", meter.calls + 1)
-            return "".join(out)
-    except Exception:  # noqa: BLE001 — transport hiccup, or a proxy that rejects stream=
-        pass
+            text = "".join(out)
+            _traced(label, messages, kw, started, output=text, usage=usage, streamed=True)
+            return text
+    except Exception as e:  # noqa: BLE001 — transport hiccup, or a proxy that rejects stream=
+        _traced(label, messages, kw, started, error=e, streamed=True)
+    # the retry below goes through chat(), which writes its own trace line
     say("\n  [dim](this proxy build answered without streaming — same text, "
         "delivered all at once)[/dim]\n  ")
     text = chat(cli, messages, label=label, **kw)
