@@ -7,3 +7,9 @@ langgraph>=0.2
 # Heavy (~2GB) but installed once; MAI_CLASSIFY=0 runs the kit without it.
 transformers>=4.44
 torch>=2.2
+# simple_rag/ — a persistent vector DB and a local embedding model. Both are
+# open source and run offline; no API key, no per-token cost. torch above is
+# already the heavy part, so these three are a small add.
+chromadb>=1.0
+sentence-transformers>=3.0
+pypdf>=4.0

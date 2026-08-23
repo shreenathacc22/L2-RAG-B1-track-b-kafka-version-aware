@@ -12,3 +12,5 @@ memory.jsonl.bak
 profile.json
 profile.json.tmp
 episodes/
+rag_traces.jsonl
+simple_rag/.chroma/

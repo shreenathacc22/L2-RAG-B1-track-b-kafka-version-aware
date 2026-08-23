@@ -43,6 +43,13 @@ weekend — `git pull` at the start of every session.)*
 | 3 (Sun) | 4 | **An Agent You Can Trust** — LangGraph · tools · agentic RAG · budget caps · HITL checkpoint | **live** |
 | 3 (Sun) | 5 | **Compose & Ship** — the capstone: one Gradio app wiring Labs 1–4, then your own corpus | **live** |
 
+**Extra — [`simple_rag/`](./simple_rag/README.md)**: the same RAG idea on a second
+corpus (50 car-owner docs, `.md` **and** `.pdf`) with a persistent **Chroma** store and
+a **local open-source embedding model** — no API key for anything but the final answer.
+Where Lab 3 teaches retrieval *quality*, this one teaches pipeline *observability*:
+every stage — load, chunk, embed, store, retrieve, generate — prints what it measured
+and appends a trace line, so a wrong answer points at the stage that lost the fact.
+
 The `corpus/` folder is Meridian Corp's policy binder — deliberately laced with
 multi-hop facts and a superseded policy version, so retrieval mistakes are
 visible. After class, swap it for documents from YOUR world: that version of
