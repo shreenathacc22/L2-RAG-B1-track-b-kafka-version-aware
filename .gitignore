@@ -14,3 +14,7 @@ profile.json.tmp
 episodes/
 rag_traces.jsonl
 simple_rag/.chroma/
+
+# stock_rag
+stock_traces.jsonl
+stock_rag/predictions.jsonl
