@@ -66,9 +66,46 @@ Turn it off with `RAG_TRACE=0`; move it with `RAG_TRACE_FILE=/path/to.jsonl`.
 The LLM answer call is *also* traced, separately, to `traces.jsonl` by the class kit
 — tokens, latency, the exact messages sent. `python labs/traces.py` reads that one.
 
+## The golden set
+
+Six frozen cases in `golden.jsonl`, following `golden/SCHEMA.md` — two happy path,
+two unanswerable, two misleading.
+
+```bash
+python simple_rag/rag.py eval                    # all six
+python simple_rag/rag.py eval --case av-003 -v   # one case, with the answer printed
+```
+
+| id | bucket | type | what it catches |
+|---|---|---|---|
+| `av-001` | happy path | `exact_string` | 12-row price table where three rows differ only by trim label |
+| `av-002` | happy path | `multi_hop` | feature list and price table are different chunks of one doc |
+| `av-003` | unanswerable | `unanswerable` | Glory's `505 litres` sits in a near-identical doc; Storm has no boot figure. Misattribution, not invention — how RAG actually hallucinates |
+| `av-004` | unanswerable | `unanswerable` | "ground clearance" appears **nowhere** in the corpus. Honesty when nothing is retrievable |
+| `av-005` | misleading | `conflicting_sources` | pricing doc says all models come in Sterling Silver; the Storm page lists five colours without it. Neither is marked stale |
+| `av-006` | misleading | `false_premise` | the ZX row literally contains "360º Camera", so the top chunk *appears* to confirm a false premise unless the trim column is read |
+
+**Two scores, never averaged** — that rule from your schema earned its keep immediately:
+
+- **retrieval** — `must_cite` / `must_not_cite`, plain set membership. Deterministic, free.
+- **answer** — facts, behavior, forbidden. One LLM judge call. `must_not_contain` is
+  checked by exact string match *before* the judge runs — structural, so no false positives.
+
+`must_cite` is **chunk-level**, pinned by heading:
+
+```json
+"must_cite": [{"doc": "Aventro Storm SUV", "heading": "Highlighted Features by Variant"}]
+```
+
+Heading rather than chunk id, because a heading survives re-chunking and an id does not.
+Doc-level assertions go decorative the moment chunking splits — a 10-chunk doc passes if
+any one chunk shows up, so the suite reports "retrieval PASS, answer FAIL" while the chunk
+holding the fact never arrived. That is a retrieval bug wearing a generation bug's label.
+
 ## Knobs worth turning
 
 ```bash
+python simple_rag/rag.py ingest --min-words 0        # keep degenerate chunks, see the damage
 python simple_rag/rag.py ingest --chunk-words 400    # watch the histogram shift right
 python simple_rag/rag.py ingest --overlap 0          # boundary facts stop surviving
 python simple_rag/rag.py ingest --formats pdf        # index the lossy copy instead

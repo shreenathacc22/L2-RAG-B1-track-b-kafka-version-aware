@@ -25,6 +25,7 @@ wrong, the trace tells you WHICH stage lost the fact.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import statistics
 import sys
@@ -156,7 +157,8 @@ def load(formats: list[str], dedupe: bool) -> list[dict]:
 # the answer hides inside noise; too small and a two-sentence fact gets cut in
 # half — retrievable neither way. So: measure the distribution, not the average.
 
-def chunk(text: str, doc: str, target_words: int = 180, overlap: int = 1) -> list[dict]:
+def chunk(text: str, doc: str, target_words: int = 180, overlap: int = 1,
+          min_words: int = 25) -> list[dict]:
     """Paragraph-packing with a heading carried into every chunk.
 
     Two deliberate choices, both visible in the output:
@@ -168,36 +170,55 @@ def chunk(text: str, doc: str, target_words: int = 180, overlap: int = 1) -> lis
     blocks = [b.strip() for b in text.split("\n\n") if b.strip()]
     out: list[dict] = []
     buf: list[str] = []
-    heading = ""
+    heading = ""       # the heading the reader is currently under
+    buf_heading = ""   # the heading in effect where THIS chunk began
     n = 0
 
-    def flush():
+    def flush(label: str, force: bool = False) -> bool:
+        """Emit the buffer as a chunk. Returns False if it was too thin to stand
+        alone, in which case the caller keeps accumulating instead.
+
+        A chunk whose body is a rule and a heading is ~100% prepended header once
+        we add ours, so it embeds as a pure TITLE vector and matches every query
+        about that document — a top-k parasite carrying no information. Merging
+        it forward costs nothing and loses no text; dropping it would lose text."""
         if not buf:
-            return
-        header = f"{doc}" + (f" — {heading}" if heading else "")
+            return False
         body = "\n\n".join(buf)
-        out.append({"text": f"{header}\n\n{body}", "heading": heading,
+        if not force and len(body.split()) < min_words:
+            return False
+        header = f"{doc}" + (f" — {label}" if label else "")
+        out.append({"text": f"{header}\n\n{body}", "heading": label,
                     "words": len(body.split())})
+        return True
 
     for b in blocks:
         if b.lstrip().startswith("#"):
             heading = b.lstrip("#").strip().splitlines()[0]
         w = len(b.split())
         if n + w > target_words and buf:
-            flush()
-            buf = buf[-overlap:] if overlap else []
-            n = sum(len(p.split()) for p in buf)
+            # label with the heading this chunk STARTED under, not the one it
+            # happened to end on — otherwise the header we prepend (and embed)
+            # describes the next section instead of the text underneath it.
+            if flush(buf_heading):
+                buf = buf[-overlap:] if overlap else []
+                n = sum(len(p.split()) for p in buf)
+                buf_heading = heading
+        if not buf:
+            buf_heading = heading
         buf.append(b)
         n += w
-    flush()
+    flush(buf_heading, force=True)   # the tail always ships — never lose text
     return out
 
 
-def chunk_all(docs: list[dict], target_words: int, overlap: int) -> list[dict]:
-    with stage("chunk", target_words=target_words, overlap_paras=overlap) as obs:
+def chunk_all(docs: list[dict], target_words: int, overlap: int,
+              min_words: int = 25) -> list[dict]:
+    with stage("chunk", target_words=target_words, overlap_paras=overlap,
+               min_words=min_words) as obs:
         chunks: list[dict] = []
         for d in docs:
-            pieces = chunk(d["text"], d["stem"], target_words, overlap)
+            pieces = chunk(d["text"], d["stem"], target_words, overlap, min_words)
             for i, p in enumerate(pieces):
                 chunks.append({"id": f"{d['fmt']}:{d['stem']}#{i}", "doc": d["stem"],
                                "fmt": d["fmt"], "path": d["path"], "seq": i, **p})
@@ -385,8 +406,8 @@ def retrieve(query: str, k: int = 4) -> list[dict]:
         return hits
 
 
-def answer(query: str, k: int = 4) -> str:
-    hits = retrieve(query, k=k)
+def answer(query: str, k: int = 4, hits: list[dict] | None = None) -> str:
+    hits = retrieve(query, k=k) if hits is None else hits
     from _kit import chat, client, meter          # the class LLM proxy + its meter
     with stage("generate", query=query) as obs:
         ctx = "\n\n".join(f"[{h['rank']}] ({h['doc']})\n{h['text']}" for h in hits)
@@ -422,12 +443,159 @@ def answer(query: str, k: int = 4) -> str:
         return out
 
 
+# ══ the golden set ═══════════════════════════════════════════════════════════
+# Six frozen cases in golden.jsonl — two happy path, two unanswerable, two
+# misleading. Schema and discipline follow golden/SCHEMA.md, including the rule
+# that matters most: RETRIEVAL and ANSWER are scored separately and never
+# averaged. A blended number tells you something broke and nothing about where.
+#
+#   retrieval   did must_cite / must_not_cite hold?   plain code, deterministic, free
+#   answer      did the prose satisfy facts+behavior?  one LLM judge call per case
+#
+# A case is frozen once merged. Editing question or expect to make a red suite go
+# green is how an eval set quietly becomes a description of current behaviour.
+
+GOLDEN_FILE = Path(__file__).resolve().parent / "golden.jsonl"
+
+JUDGE = (
+    "You are a strict grader for a retrieval-augmented answering system. You are "
+    "given a CASE (question, expected behavior, required facts, things the answer "
+    "must not do, and a rubric) and the system's ANSWER.\n\n"
+    "Apply the rubric literally. Grade meaning, not wording — a fact stated in "
+    "different words counts. Behaviors: 'answer' = give it; 'refuse' = state the "
+    "sources do not cover it; 'answer_partial' = serve the legitimate part and "
+    "correct or decline the rest.\n\n"
+    'Respond ONLY with JSON: {"pass": true|false, "why": "<one sentence>"}. '
+    "When genuinely torn, fail it — a golden set that flatters the system is worse "
+    "than no golden set."
+)
+
+
+def _spec(entry) -> dict:
+    """A must_cite entry is either "Doc Name" or {"doc": ..., "heading": ...}.
+
+    Doc-level alone went decorative the moment chunking started splitting: a doc
+    with 10 chunks passes if ANY one of them shows up, so the suite reported
+    'retrieval PASS, answer FAIL' while the chunk holding the fact never arrived
+    — which is a retrieval bug wearing a generation bug's label. Heading is the
+    right granularity because it survives re-chunking; a chunk id does not."""
+    return entry if isinstance(entry, dict) else {"doc": entry}
+
+
+def _hit_matches(spec: dict, h: dict) -> bool:
+    if h["doc"] != spec["doc"]:
+        return False
+    want = spec.get("heading")
+    return want is None or want.lower() in (h.get("heading") or "").lower()
+
+
+def grade_retrieval(case: dict, hits: list[dict]) -> tuple[bool, str]:
+    """Deterministic. No model, no judgment, no cost — just set membership."""
+    def label(s):
+        return s["doc"] + (f" § {s['heading']}" if s.get("heading") else "")
+
+    missing = [label(s) for s in map(_spec, case["expect"]["must_cite"])
+               if not any(_hit_matches(s, h) for h in hits)]
+    present = [label(s) for s in map(_spec, case["expect"]["must_not_cite"])
+               if any(_hit_matches(s, h) for h in hits)]
+    if missing:
+        return False, f"never retrieved: {'; '.join(missing)}"
+    if present:
+        return False, f"retrieved a forbidden source: {'; '.join(present)}"
+    return True, "required chunks present, forbidden absent"
+
+
+def grade_answer(case: dict, out: str) -> tuple[bool, str]:
+    """The literal string check runs FIRST and is not delegated to the judge.
+
+    must_not_contain is exact match on purpose — checking for the string '505'
+    is structural, needs no model, and cannot produce a false positive. Only the
+    part that genuinely requires reading comprehension goes to the LLM."""
+    from _kit import chat, client
+    leaked = [s for s in case["expect"]["must_not_contain"] if s in out]
+    if leaked:
+        return False, f"answer contains forbidden string: {', '.join(leaked)}"
+    verdict = chat(client(), [
+        {"role": "system", "content": JUDGE},
+        {"role": "user", "content":
+            f"CASE:\n{json.dumps({k: case[k] for k in ('type','question','expect','rubric')}, indent=1)}"
+            f"\n\nANSWER:\n{out}"},
+    ], label="judge", max_tokens=900, response_format={"type": "json_object"})
+    try:
+        v = json.loads(verdict.strip().removeprefix("```json").removeprefix("```")
+                       .removesuffix("```").strip())
+    except json.JSONDecodeError:
+        return False, "judge returned non-JSON"
+    return bool(v.get("pass")), str(v.get("why", ""))
+
+
+def cmd_eval(a) -> None:
+    import observe
+    cases = [json.loads(l) for l in GOLDEN_FILE.read_text().splitlines() if l.strip()]
+    if a.case:
+        cases = [c for c in cases if c["id"] in a.case]
+    say(f"[bold]Golden set[/bold] · {len(cases)} cases · k={a.k}  "
+        f"[dim]run {RUN_ID}[/dim]\n")
+
+    results = []
+    with stage("eval", cases=len(cases), k=a.k) as obs:
+        for c in cases:
+            observe.set_quiet(True)          # trace everything, print nothing
+            try:
+                hits = retrieve(c["question"], k=a.k)
+                out = answer(c["question"], k=a.k, hits=hits)
+            finally:
+                observe.set_quiet(False)
+            r_ok, r_why = grade_retrieval(c, hits)
+            a_ok, a_why = grade_answer(c, out)
+            row = {"id": c["id"], "bucket": c["bucket"], "type": c["type"],
+                   "retrieval": r_ok, "retrieval_why": r_why,
+                   "answer": a_ok, "answer_why": a_why,
+                   "top_similarity": hits[0]["similarity"] if hits else None,
+                   "docs": sorted({h["doc"] for h in hits})}
+            results.append((c, row, out))
+            event("golden_case", **row)
+
+            mark = lambda ok: "[green]PASS[/green]" if ok else "[red]FAIL[/red]"  # noqa: E731
+            say(f"  {c['id']}  [dim]{c['bucket']:<13}[/dim] "
+                f"retrieval {mark(r_ok)}   answer {mark(a_ok)}   "
+                f"[dim]top-sim {row['top_similarity']}[/dim]")
+            say(f"        [dim]{c['question']}[/dim]")
+            if not r_ok:
+                say(f"        [red]retrieval:[/red] {r_why}")
+            if not a_ok:
+                say(f"        [red]answer:[/red] {a_why}")
+            if a.verbose:
+                say(f"        [dim]→ {out.replace(chr(10), ' ')[:400]}[/dim]")
+
+        r_pass = sum(1 for _, r, _ in results if r["retrieval"])
+        a_pass = sum(1 for _, r, _ in results if r["answer"])
+        obs.update(retrieval_passed=r_pass, answer_passed=a_pass, n=len(results))
+
+    say()
+    table("scorecard — two scores, never averaged",
+          ["bucket", "cases", "retrieval", "answer"],
+          [(b, n, f"{sum(1 for _, r, _ in results if r['bucket'] == b and r['retrieval'])}/{n}",
+            f"{sum(1 for _, r, _ in results if r['bucket'] == b and r['answer'])}/{n}")
+           for b, n in [(b, sum(1 for _, r, _ in results if r["bucket"] == b))
+                        for b in ("happy_path", "unanswerable", "misleading")] if n])
+    say(f"\n  [bold]retrieval {r_pass}/{len(results)}[/bold] · "
+        f"[bold]answer {a_pass}/{len(results)}[/bold]")
+    say("  [dim]A retrieval FAIL and an answer FAIL are different bugs with "
+        "different fixes — that is why they do not add up to one number.[/dim]")
+    say(f"  [dim]Every case is traced to {TRACE_FILE}; rerun after any change "
+        "and beat the number or don't ship.[/dim]")
+    say("  [yellow]Gap:[/yellow] [dim]all six cases are the accuracy class. The "
+        "safety class in golden/SCHEMA.md — injection, leakage, abuse — has zero "
+        "cases here, and those gate at 100%.[/dim]")
+
+
 # ══ commands ═════════════════════════════════════════════════════════════════
 
 def cmd_ingest(a) -> None:
     say(f"[bold]Aventro RAG · ingest[/bold]  [dim]run {RUN_ID} → {TRACE_FILE}[/dim]")
     docs = load(a.formats.split(","), dedupe=not a.no_dedupe)
-    chunks = chunk_all(docs, a.chunk_words, a.overlap)
+    chunks = chunk_all(docs, a.chunk_words, a.overlap, a.min_words)
     vecs = embed_all(chunks)
     store(chunks, vecs, reset=not a.append)
     say("\n[green]Ingest complete.[/green]  "
@@ -504,6 +672,8 @@ if __name__ == "__main__":
     i.add_argument("--formats", default="md,pdf", help="md, pdf, or md,pdf")
     i.add_argument("--chunk-words", type=int, default=180, help="target chunk size")
     i.add_argument("--overlap", type=int, default=1, help="paragraphs repeated per chunk")
+    i.add_argument("--min-words", type=int, default=25,
+                   help="chunks thinner than this merge forward (0 = keep them)")
     i.add_argument("--no-dedupe", action="store_true",
                    help="index both formats of the same title (see what breaks)")
     i.add_argument("--append", action="store_true", help="keep the existing collection")
@@ -513,6 +683,12 @@ if __name__ == "__main__":
     q.add_argument("question", nargs="*")
     q.add_argument("-k", type=int, default=4, help="chunks to retrieve")
     q.set_defaults(func=cmd_ask)
+
+    g = sub.add_parser("eval", help="run the 6-case golden set")
+    g.add_argument("-k", type=int, default=4, help="chunks to retrieve")
+    g.add_argument("--case", nargs="*", help="run only these ids, e.g. av-003")
+    g.add_argument("--verbose", action="store_true", help="print each answer")
+    g.set_defaults(func=cmd_eval)
 
     n = sub.add_parser("inspect", help="summarize rag_traces.jsonl")
     n.add_argument("--file", default=str(TRACE_FILE))

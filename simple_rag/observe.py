@@ -37,7 +37,23 @@ from rich.console import Console
 from rich.table import Table
 
 console = Console()
-say = console.print
+_quiet = False
+
+
+def set_quiet(value: bool) -> None:
+    """Silence the live half of observability, keep the trace half.
+
+    The eval loop runs six queries; six full stage dumps would bury the
+    scorecard. Tracing is unaffected — quiet changes what YOU see, never what
+    gets recorded, because a run you can't reconstruct afterwards is the thing
+    this module exists to prevent."""
+    global _quiet
+    _quiet = value
+
+
+def say(*args, **kwargs) -> None:
+    if not _quiet:
+        console.print(*args, **kwargs)
 
 TRACE_FILE = Path(os.environ.get("RAG_TRACE_FILE", "rag_traces.jsonl"))
 RUN_ID = uuid.uuid4().hex[:8]      # groups every record from one process run
@@ -99,7 +115,7 @@ def table(title: str, columns: list[str], rows: list[tuple]) -> None:
         t.add_column(c, justify="left" if i == 0 else "right")
     for r in rows:
         t.add_row(*[str(x) for x in r])
-    console.print(t)
+    say(t)
 
 
 def spread(values: list[float | int], label: str, unit: str = "") -> dict:
