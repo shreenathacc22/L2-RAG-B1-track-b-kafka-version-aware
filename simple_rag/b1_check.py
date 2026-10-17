@@ -13,7 +13,11 @@ as "not yet" instead of failing, so this one command works at every step.
                        the right types; one current file per doc; current is newest;
                        version and date agree with the file's header line; every
                        conflict value is really in its file
-    Step 5  golden     (added in Step 5)
+    Step 5  golden     >=15 well-formed cases with unique ids; every must_cite is a
+                       current file and every must_not_cite a superseded one; every
+                       must_not_contain string is in the old file and NOT in the
+                       current one; every exact_string value is really in its cited
+                       file; questions are paraphrased, not copied from the runbooks
 
 Exit code 0 = every check that ran passed.
 """
@@ -29,6 +33,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CORPUS = HERE / "corpus" / "kafka"
 MANIFEST = CORPUS / "manifest.json"
+GOLDEN = HERE / "golden_kafka.jsonl"
+TYPES = {"superseded", "exact_string", "multi_hop", "unanswerable"}
 FIELDS = {"doc": str, "version": int, "effective_date": str, "superseded": bool}
 
 OLD_NAME = re.compile(r"^(?P<subject>.+)-(?P<year>20\d\d)\.md$")
@@ -236,6 +242,96 @@ def check_manifest() -> None:
              "usable as must_not_contain in Step 5")
 
 
+# ── Step 5: golden set ───────────────────────────────────────────────────────
+
+def _longest_shared_run(a: str, b: str) -> int:
+    """Longest run of consecutive words that appears in both texts."""
+    aw, bw = re.findall(r"\w+", a.lower()), " ".join(re.findall(r"\w+", b.lower()))
+    best = 0
+    for i in range(len(aw)):
+        for j in range(i + best + 1, len(aw) + 1):
+            if " ".join(aw[i:j]) in bw:
+                best = j - i
+            else:
+                break
+    return best
+
+
+def check_golden() -> None:
+    print("\n[Step 5] golden set  ·", GOLDEN.relative_to(HERE.parent))
+    n_before = len(failures)
+    files = json.loads(MANIFEST.read_text(encoding="utf-8"))["files"]
+    by_key = {(m["doc"], m["version"]): (n, m) for n, m in files.items()}
+    text = {n: (CORPUS / n).read_text(encoding="utf-8") for n in files}
+
+    cases = []
+    for i, line in enumerate(GOLDEN.read_text(encoding="utf-8").splitlines(), 1):
+        if line.strip():
+            try:
+                cases.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                fail(f"line {i}: not valid JSON ({e})")
+    ids = [c.get("id") for c in cases]
+    counts = {t: sum(c.get("type") == t for c in cases) for t in sorted(TYPES)}
+    if len(cases) >= 15 and len(set(ids)) == len(ids) and counts["superseded"] and counts["exact_string"]:
+        ok(f"{len(cases)} cases, unique ids, " + ", ".join(f"{t} {n}" for t, n in counts.items()))
+    else:
+        fail(f"need >=15 cases with unique ids incl. superseded and exact_string; got {len(cases)}, {counts}")
+
+    for c in cases:
+        cid, e, t = c.get("id"), c.get("expect", {}), c.get("type")
+        if t not in TYPES or not c.get("question") or "behavior" not in e:
+            fail(f"{cid}: missing type/question/expect.behavior")
+            continue
+        cited, banned = [], []
+        for ref in e.get("must_cite", []):
+            hit = by_key.get((ref.get("doc"), ref.get("version")))
+            if not hit or hit[1]["superseded"]:
+                fail(f"{cid}: must_cite {ref} is not a current file in the manifest")
+            else:
+                cited.append(hit[0])
+        for ref in e.get("must_not_cite", []):
+            hit = by_key.get((ref.get("doc"), ref.get("version")))
+            if not hit or not hit[1]["superseded"]:
+                fail(f"{cid}: must_not_cite {ref} is not a superseded file in the manifest")
+            else:
+                banned.append(hit[0])
+
+        if t == "unanswerable":
+            if e["must_cite"] or e["behavior"] != "refuse":
+                fail(f"{cid}: unanswerable cases need no must_cite and behavior 'refuse'")
+        elif not cited:
+            fail(f"{cid}: answerable case has no must_cite")
+        if t in ("superseded", "multi_hop") and not banned:
+            fail(f"{cid}: {t} case must name the old version in must_not_cite")
+        if t == "multi_hop" and len(cited) < 2:
+            fail(f"{cid}: multi_hop needs two documents in must_cite")
+
+        for s_ in e.get("must_not_contain", []):
+            if not any(s_ in text[b] for b in banned):
+                fail(f"{cid}: must_not_contain {s_!r} is not in any must_not_cite file")
+            if any(s_ in text[n] for n in cited):
+                fail(f"{cid}: must_not_contain {s_!r} also appears in a current file — "
+                     "a correct answer could trip it")
+        if t == "exact_string":
+            for f_ in e.get("facts", []):
+                if not any(f_ in text[n] for n in cited):
+                    fail(f"{cid}: exact value {f_!r} is not verbatim in {cited}")
+
+        run = max((_longest_shared_run(c["question"], text[n]) for n in cited), default=0)
+        if run >= 7:
+            fail(f"{cid}: question copies {run} consecutive words from the runbook — paraphrase it")
+    if len(failures) == n_before:
+        ok("every must_cite is current, every must_not_cite is superseded")
+        ok("every must_not_contain is in the old file only; every exact value is verbatim in its file")
+        ok("unanswerable cases cite nothing and expect a refusal; multi_hop cases cite 2 docs")
+        ok("no question copies 7+ consecutive words from the runbook it targets")
+        covered = {by_key[(r["doc"], r["version"])][0] for c in cases
+                   for r in c["expect"].get("must_cite", [])}
+        info(f"current runbooks covered by must_cite: {len(covered)}/"
+             f"{sum(not m['superseded'] for m in files.values())}")
+
+
 def main() -> int:
     print("B1 data checks · Track B")
     if CORPUS.exists():
@@ -248,7 +344,10 @@ def main() -> int:
         check_manifest()
     else:
         info("manifest.json — not yet (Step 4)")
-    info("golden_kafka.jsonl — not yet (Step 5)")
+    if GOLDEN.exists() and MANIFEST.exists():
+        check_golden()
+    else:
+        info("golden_kafka.jsonl — not yet (Step 5)")
     print(f"\n{'PASS' if not failures else f'FAIL ({len(failures)})'}")
     return 1 if failures else 0
 
