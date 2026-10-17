@@ -9,13 +9,18 @@ as "not yet" instead of failing, so this one command works at every step.
     Step 3  corpus     8 subjects x (current, old); no "superseded" banner in any file;
                        the similarity trap — how often the OLD runbook outranks the
                        current one for a plain question, using rag.py's own embedder
-    Step 4  manifest   (added in Step 4)
+    Step 4  manifest   every file has exactly doc/version/effective_date/superseded with
+                       the right types; one current file per doc; current is newest;
+                       version and date agree with the file's header line; every
+                       conflict value is really in its file
     Step 5  golden     (added in Step 5)
 
 Exit code 0 = every check that ran passed.
 """
 from __future__ import annotations
 
+import datetime as dt
+import json
 import os
 import re
 import sys
@@ -23,6 +28,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CORPUS = HERE / "corpus" / "kafka"
+MANIFEST = CORPUS / "manifest.json"
+FIELDS = {"doc": str, "version": int, "effective_date": str, "superseded": bool}
 
 OLD_NAME = re.compile(r"^(?P<subject>.+)-(?P<year>20\d\d)\.md$")
 HEADER = re.compile(r"^Version (\d+) · Effective (\d{4}-\d{2}-\d{2}) · Owner: .+$", re.M)
@@ -142,6 +149,93 @@ def check_trap() -> None:
         fail("old never outranks current; the BEFORE run may show 0% and prove nothing")
 
 
+# ── Step 4: manifest ─────────────────────────────────────────────────────────
+
+def check_manifest() -> None:
+    print("\n[Step 4] manifest  ·", MANIFEST.relative_to(HERE.parent))
+    n_before = len(failures)
+    m = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    files = m.get("files", {})
+
+    on_disk = {p.name for p in CORPUS.glob("*.md")}
+    if set(files) == on_disk:
+        ok(f"manifest lists exactly the {len(on_disk)} runbooks on disk")
+    else:
+        fail(f"manifest/disk mismatch: only in manifest {sorted(set(files) - on_disk)}, "
+             f"only on disk {sorted(on_disk - set(files))}")
+
+    valid: dict[str, dict] = {}   # entries that passed the type checks
+    for name, meta in files.items():
+        if set(meta) != set(FIELDS):
+            fail(f"{name}: fields {sorted(meta)} != {sorted(FIELDS)}")
+            continue
+        bad = False
+        for k, t in FIELDS.items():
+            # bool is a subclass of int in Python — reject True as a version number
+            if not isinstance(meta[k], t) or (t is int and isinstance(meta[k], bool)):
+                fail(f"{name}: {k}={meta[k]!r} is not {t.__name__}")
+                bad = True
+        try:
+            dt.date.fromisoformat(meta["effective_date"])
+        except (TypeError, ValueError):
+            fail(f"{name}: effective_date {meta['effective_date']!r} is not YYYY-MM-DD")
+            bad = True
+        if bad:
+            continue          # later checks compare values; skip what is malformed
+        valid[name] = meta
+        if name in on_disk:
+            h = HEADER.search((CORPUS / name).read_text(encoding="utf-8"))
+            if h and (int(h[1]), h[2]) != (meta["version"], meta["effective_date"]):
+                fail(f"{name}: header says v{h[1]} {h[2]}, manifest says "
+                     f"v{meta['version']} {meta['effective_date']}")
+    if len(failures) == n_before:
+        ok("every entry has exactly 4 fields with the right types; versions and dates match the files")
+
+    n_before = len(failures)
+    by_doc: dict[str, list[tuple[str, dict]]] = {}
+    for name, meta in valid.items():
+        by_doc.setdefault(meta["doc"], []).append((name, meta))
+    for doc, members in by_doc.items():
+        current = [(n, x) for n, x in members if x["superseded"] is False]
+        if len(current) != 1:
+            fail(f"{doc!r}: {len(current)} current files, need exactly 1")
+            continue
+        cname, cmeta = current[0]
+        for n, x in members:
+            if n != cname and not (x["version"] < cmeta["version"]
+                                   and x["effective_date"] < cmeta["effective_date"]):
+                fail(f"{doc!r}: old {n} is not older than current {cname}")
+    if len(failures) == n_before:
+        n_cur = sum(1 for x in valid.values() if x["superseded"] is False)
+        ok(f"{len(by_doc)} docs, each with exactly 1 current file that has the highest "
+           f"version and latest date ({n_cur} current, {len(valid) - n_cur} superseded)")
+
+    n_before = len(failures)
+    conflicts = m.get("conflicts", {})
+    if set(conflicts) != set(by_doc):
+        fail(f"conflicts keys {sorted(conflicts)} != docs {sorted(by_doc)}")
+    distinct = total = 0
+    for doc, rows in conflicts.items():
+        members = dict(by_doc.get(doc, []))
+        cur = next((n for n, x in members.items() if not x["superseded"]), None)
+        old = next((n for n, x in members.items() if x["superseded"]), None)
+        if not (cur and old):
+            continue
+        ctext = (CORPUS / cur).read_text(encoding="utf-8")
+        otext = (CORPUS / old).read_text(encoding="utf-8")
+        for r in rows:
+            total += 1
+            if r["old"] not in otext:
+                fail(f"{doc}: old value {r['old']!r} ({r['field']}) not found in {old}")
+            if r["current"] not in ctext:
+                fail(f"{doc}: current value {r['current']!r} ({r['field']}) not found in {cur}")
+            distinct += r["old"] not in ctext
+    if len(failures) == n_before:
+        ok(f"all {total} conflict values found in their files")
+        info(f"{distinct}/{total} old values never appear in the current file — "
+             "usable as must_not_contain in Step 5")
+
+
 def main() -> int:
     print("B1 data checks · Track B")
     if CORPUS.exists():
@@ -150,7 +244,10 @@ def main() -> int:
             check_trap()
     else:
         info("corpus/kafka/ not yet (Step 3)")
-    info("manifest.json — not yet (Step 4)")
+    if MANIFEST.exists():
+        check_manifest()
+    else:
+        info("manifest.json — not yet (Step 4)")
     info("golden_kafka.jsonl — not yet (Step 5)")
     print(f"\n{'PASS' if not failures else f'FAIL ({len(failures)})'}")
     return 1 if failures else 0

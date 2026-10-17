@@ -1,0 +1,439 @@
+{
+  "_about": "B1 Track B metadata. 'files' is what ingest attaches to every chunk (doc, version, effective_date, superseded). 'conflicts' lists every value that differs between versions; it is source material for golden cases and is never given to the retriever.",
+  "files": {
+    "broker-rolling-restart-2025.md": {
+      "doc": "Kafka Broker Rolling Restart Procedure",
+      "version": 3,
+      "effective_date": "2025-03-10",
+      "superseded": true
+    },
+    "broker-rolling-restart.md": {
+      "doc": "Kafka Broker Rolling Restart Procedure",
+      "version": 4,
+      "effective_date": "2026-04-01",
+      "superseded": false
+    },
+    "consumer-lag-alerting-2024.md": {
+      "doc": "Kafka Consumer Lag Alerting Runbook",
+      "version": 1,
+      "effective_date": "2024-06-01",
+      "superseded": true
+    },
+    "consumer-lag-alerting.md": {
+      "doc": "Kafka Consumer Lag Alerting Runbook",
+      "version": 2,
+      "effective_date": "2026-03-01",
+      "superseded": false
+    },
+    "disk-capacity-2025.md": {
+      "doc": "Kafka Broker Disk Capacity Runbook",
+      "version": 2,
+      "effective_date": "2025-02-01",
+      "superseded": true
+    },
+    "disk-capacity.md": {
+      "doc": "Kafka Broker Disk Capacity Runbook",
+      "version": 3,
+      "effective_date": "2026-05-01",
+      "superseded": false
+    },
+    "listeners-and-auth-2024.md": {
+      "doc": "Kafka Listeners and Client Authentication",
+      "version": 1,
+      "effective_date": "2024-03-01",
+      "superseded": true
+    },
+    "listeners-and-auth.md": {
+      "doc": "Kafka Listeners and Client Authentication",
+      "version": 3,
+      "effective_date": "2026-02-01",
+      "superseded": false
+    },
+    "oncall-escalation-2025.md": {
+      "doc": "Kafka On-Call Escalation Policy",
+      "version": 2,
+      "effective_date": "2025-01-10",
+      "superseded": true
+    },
+    "oncall-escalation.md": {
+      "doc": "Kafka On-Call Escalation Policy",
+      "version": 3,
+      "effective_date": "2026-06-01",
+      "superseded": false
+    },
+    "schema-registry-2024.md": {
+      "doc": "Kafka Schema Registry Operations",
+      "version": 1,
+      "effective_date": "2024-07-15",
+      "superseded": true
+    },
+    "schema-registry.md": {
+      "doc": "Kafka Schema Registry Operations",
+      "version": 2,
+      "effective_date": "2026-03-20",
+      "superseded": false
+    },
+    "topic-creation-standards-2024.md": {
+      "doc": "Kafka Topic Creation Standards",
+      "version": 2,
+      "effective_date": "2024-05-20",
+      "superseded": true
+    },
+    "topic-creation-standards.md": {
+      "doc": "Kafka Topic Creation Standards",
+      "version": 3,
+      "effective_date": "2026-02-15",
+      "superseded": false
+    },
+    "topic-retention-2024.md": {
+      "doc": "Kafka Topic Retention Policy",
+      "version": 2,
+      "effective_date": "2024-09-01",
+      "superseded": true
+    },
+    "topic-retention.md": {
+      "doc": "Kafka Topic Retention Policy",
+      "version": 3,
+      "effective_date": "2026-01-15",
+      "superseded": false
+    }
+  },
+  "conflicts": {
+    "Kafka Consumer Lag Alerting Runbook": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "warn",
+        "old": "consumer lag above 50,000 messages for 5 minutes",
+        "current": "consumer lag above 5 minutes of time lag for 5 minutes"
+      },
+      {
+        "field": "page",
+        "old": "consumer lag above 100,000 messages for 5 minutes",
+        "current": "consumer lag above 10 minutes of time lag for 5 minutes"
+      },
+      {
+        "field": "exporter",
+        "old": "lag-monitor",
+        "current": "kafka-lag-exporter"
+      },
+      {
+        "field": "exp_port",
+        "old": "9999",
+        "current": "9308"
+      },
+      {
+        "field": "metric",
+        "old": "kafka_consumergroup_lag",
+        "current": "kafka_consumergroup_lag_seconds"
+      },
+      {
+        "field": "dashboard",
+        "old": "Kafka Lag (legacy)",
+        "current": "Kafka Consumer Health"
+      },
+      {
+        "field": "action",
+        "old": "Restart the consumer deployment with `kubectl rollout restart`.",
+        "current": "Scale the consumer deployment out, up to twice its normal replica count."
+      }
+    ],
+    "Kafka Topic Retention Policy": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "ret_ms",
+        "old": "604800000",
+        "current": "259200000"
+      },
+      {
+        "field": "ret_human",
+        "old": "7 days",
+        "current": "3 days"
+      },
+      {
+        "field": "ret_bytes",
+        "old": "-1 (unlimited)",
+        "current": "53687091200 (50 GiB per partition)"
+      },
+      {
+        "field": "compact",
+        "old": "1 hour",
+        "current": "6 hours"
+      },
+      {
+        "field": "self_max",
+        "old": "14 days",
+        "current": "7 days"
+      },
+      {
+        "field": "approver",
+        "old": "Data Governance",
+        "current": "the Architecture Review Board"
+      },
+      {
+        "field": "tool",
+        "old": "kafka-configs.sh --alter --entity-type topics --entity-name <topic> --add-config retention.ms=<value>",
+        "current": "kctl topic set-retention <topic> --ms <value>"
+      },
+      {
+        "field": "audit",
+        "old": "90 days",
+        "current": "180 days"
+      }
+    ],
+    "Kafka Broker Rolling Restart Procedure": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "change",
+        "old": "raise a normal change and get CAB approval",
+        "current": "use the pre-approved standard change template `STD-KAFKA-ROLL`"
+      },
+      {
+        "field": "window",
+        "old": "Tuesday or Thursday 22:00–02:00 UTC",
+        "current": "Wednesday 14:00–17:00 UTC"
+      },
+      {
+        "field": "precheck",
+        "old": "under-replicated partitions = 0",
+        "current": "under-replicated partitions = 0 and under-min-ISR partitions = 0"
+      },
+      {
+        "field": "order",
+        "old": "by ascending broker id",
+        "current": "all non-controller brokers by ascending id, the active controller last"
+      },
+      {
+        "field": "command",
+        "old": "sudo systemctl restart kafka",
+        "current": "kctl broker restart --id <n>"
+      },
+      {
+        "field": "shutdown",
+        "old": "60 seconds",
+        "current": "180 seconds"
+      },
+      {
+        "field": "wait",
+        "old": "5 minutes",
+        "current": "10 minutes"
+      }
+    ],
+    "Kafka Listeners and Client Authentication": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "bootstrap",
+        "old": "kafka-prod.halcyon.internal:9092",
+        "current": "kafka.prod.halcyon.internal:9094"
+      },
+      {
+        "field": "port",
+        "old": "9092",
+        "current": "9094"
+      },
+      {
+        "field": "protocol",
+        "old": "PLAINTEXT",
+        "current": "SASL_SSL"
+      },
+      {
+        "field": "mech",
+        "old": "none (PLAINTEXT has no authentication)",
+        "current": "SCRAM-SHA-512"
+      },
+      {
+        "field": "tls",
+        "old": "1.2",
+        "current": "1.3"
+      },
+      {
+        "field": "ib_port",
+        "old": "9091",
+        "current": "9093"
+      },
+      {
+        "field": "ib_proto",
+        "old": "PLAINTEXT",
+        "current": "SSL"
+      },
+      {
+        "field": "creds",
+        "old": "as the shared `svc-kafka` account; the password is on the team wiki",
+        "current": "per application from Vault at `secret/kafka/clients/<app>`"
+      },
+      {
+        "field": "rotate",
+        "old": "365 days",
+        "current": "90 days"
+      }
+    ],
+    "Kafka Topic Creation Standards": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "naming",
+        "old": "<team>.<dataset>",
+        "current": "<domain>.<team>.<dataset>.v<N>"
+      },
+      {
+        "field": "example",
+        "old": "ledger.transactions",
+        "current": "payments.ledger.transactions.v1"
+      },
+      {
+        "field": "parts",
+        "old": "6",
+        "current": "12"
+      },
+      {
+        "field": "min_isr",
+        "old": "1",
+        "current": "2"
+      },
+      {
+        "field": "max_parts",
+        "old": "50",
+        "current": "96"
+      },
+      {
+        "field": "request",
+        "old": "Open a Jira ticket in the KAFKA project. The Data Platform team creates the topic by hand.",
+        "current": "Open a pull request in the `kafka-topics` Terraform repository. CI validates the name and settings."
+      }
+    ],
+    "Kafka Broker Disk Capacity Runbook": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "warn",
+        "old": "80%",
+        "current": "75%"
+      },
+      {
+        "field": "page",
+        "old": "90%",
+        "current": "85%"
+      },
+      {
+        "field": "emerg",
+        "old": "95%",
+        "current": "92%"
+      },
+      {
+        "field": "action",
+        "old": "Delete the oldest log segment files of the largest topic by hand.",
+        "current": "Lower retention on the three largest topics with `kctl topic set-retention`. Never delete segment files by hand."
+      },
+      {
+        "field": "expand",
+        "old": "500 GiB",
+        "current": "1 TiB"
+      },
+      {
+        "field": "review",
+        "old": "quarterly",
+        "current": "monthly"
+      }
+    ],
+    "Kafka Schema Registry Operations": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "url",
+        "old": "http://schema-registry.halcyon.internal:8081",
+        "current": "https://schemas.prod.halcyon.internal:8085"
+      },
+      {
+        "field": "port",
+        "old": "8081",
+        "current": "8085"
+      },
+      {
+        "field": "auth",
+        "old": "none",
+        "current": "mutual TLS"
+      },
+      {
+        "field": "compat",
+        "old": "BACKWARD",
+        "current": "FULL_TRANSITIVE"
+      },
+      {
+        "field": "register",
+        "old": "Any service may register a schema on first produce.",
+        "current": "Only the CI pipeline may register schemas. Services read schemas but never write them."
+      },
+      {
+        "field": "delete",
+        "old": "Soft-delete a schema version with `DELETE /subjects/<subject>/versions/<n>`.",
+        "current": "Deleting a schema version is forbidden. Raise it with the Architecture Review Board."
+      }
+    ],
+    "Kafka On-Call Escalation Policy": [
+      {
+        "field": "owner",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "team",
+        "old": "Data Platform",
+        "current": "Streaming SRE"
+      },
+      {
+        "field": "pd",
+        "old": "kafka-ops",
+        "current": "streaming-platform-prod"
+      },
+      {
+        "field": "ack",
+        "old": "15 minutes",
+        "current": "5 minutes"
+      },
+      {
+        "field": "secondary",
+        "old": "30 minutes",
+        "current": "15 minutes"
+      },
+      {
+        "field": "manager",
+        "old": "60 minutes",
+        "current": "30 minutes"
+      },
+      {
+        "field": "declare",
+        "old": "a Zoom bridge started by the primary",
+        "current": "`/incident declare` in Slack, which opens the bridge"
+      },
+      {
+        "field": "channel",
+        "old": "#kafka-alerts",
+        "current": "#inc-streaming"
+      }
+    ]
+  }
+}
