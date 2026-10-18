@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Version-Aware RAG Demo</title>
+<meta name="description" content="Live demo: a metadata filter stops superseded Kafka runbooks from reaching a RAG pipeline. Superseded chunks retrieved 48.8% to 0%, exact-string retrieval unchanged.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23E8833A'/%3E%3Ctext x='16' y='21' font-family='Arial' font-weight='700' font-size='13' text-anchor='middle' fill='white'%3EB1%3C/text%3E%3C/svg%3E">
+<style>
+:root{--ink:#1f2a37;--muted:#64748b;--bg:#ffffff;--panel:#f3f6f9;--line:#dde3ea;--teal:#0f9d8a;--teal-d:#0b6e61;--teal-l:#e3f5f1;--amber:#e8833a;--amber-d:#a8541a;--amber-l:#fdebdc;--code:#1f2a37;--codefg:#e5e7eb}
+@media (prefers-color-scheme: dark){:root{--ink:#e6ebf1;--muted:#9aa7b4;--bg:#11161d;--panel:#1a2129;--line:#2a333d;--teal:#2bbfa8;--teal-d:#5fd6c3;--teal-l:#12312c;--amber:#f0a062;--amber-d:#f3b07c;--amber-l:#3a2615;--code:#0b0f14;--codefg:#d6dde5}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--teal-d)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+header{background:var(--code);color:#fff;padding:36px 0 30px}
+header .tag{display:inline-block;background:var(--amber);color:#fff;font-weight:700;border-radius:20px;padding:2px 12px;font-size:13px}
+header h1{font:700 34px/1.2 Georgia,Cambria,serif;margin:12px 0 8px}
+header p{color:#c9d3de;max-width:760px;margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font:700 26px/1.1 Georgia,Cambria,serif}
+.stat > span{color:#c9d3de;font-size:13px}
+.stat .a{color:#f6b27e}.stat .t{color:#7fe0cf}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+h2{font:700 24px/1.25 Georgia,Cambria,serif;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 16px}
+.ask{display:flex;gap:10px;flex-wrap:wrap}
+.ask input{flex:1 1 420px;min-width:0;font:inherit;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.ask input:focus{outline:2px solid var(--teal);border-color:transparent}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:0;padding:11px 18px;background:var(--teal-d);color:#fff}
+button:disabled{opacity:.55;cursor:wait}
+@media (prefers-color-scheme: dark){#go{color:#08201c}}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.chip{background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:6px 11px;border-radius:16px;font-size:13px;font-weight:500}
+.status{font-size:13px;color:var(--muted);min-height:20px;margin-top:8px}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:6px;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--teal)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.col{background:var(--panel);border-radius:14px;padding:14px;border:1px solid var(--line)}
+.col.on{border-color:var(--teal)}
+.col h3{margin:0 0 4px;font-size:16px}
+.col .verdict{font-size:13px;margin-bottom:10px;color:var(--muted)}
+.verdict b.bad{color:var(--amber-d)}.verdict b.good{color:var(--teal-d)}
+.hit{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-top:8px}
+.hit.sup{background:var(--amber-l);border-color:var(--amber)}
+.hit .top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hit .rank{font-weight:700;color:var(--muted)}
+.hit .file{font-family:ui-monospace,Menlo,monospace;font-size:13px;font-weight:600;word-break:break-all}
+.hit .sim{margin-left:auto;font-size:12px;color:var(--muted)}
+.badge{font-size:11px;font-weight:700;border-radius:10px;padding:1px 8px;white-space:nowrap}
+.badge.cur{background:var(--teal-l);color:var(--teal-d)}.badge.old{background:var(--amber);color:#fff}
+details{margin-top:6px}summary{cursor:pointer;font-size:12px;color:var(--muted)}
+pre.chunk{white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,monospace;background:var(--panel);padding:8px;border-radius:8px;margin:6px 0 0;max-height:260px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;background:var(--code);color:#fff;padding:7px 9px;position:sticky;top:0}
+td{border-bottom:1px solid var(--line);padding:7px 9px;vertical-align:top}
+tr:nth-child(even) td{background:var(--panel)}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.p{font-weight:700;color:var(--teal-d)}.f{font-weight:700;color:var(--amber-d)}
+.qlink{background:none;color:var(--teal-d);padding:0;font-weight:500;text-align:left;text-decoration:underline;border-radius:0}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.box.new{background:var(--amber-l);border:2px solid var(--amber);font-weight:700;color:var(--amber-d)}
+.box.meta{background:var(--teal-l);border-color:var(--teal)}
+.arr{color:var(--muted)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--panel);padding:1px 5px;border-radius:4px}
+footer{padding:26px 0 40px;color:var(--muted);font-size:13.5px}
+footer ul{padding-left:18px}
+@media (max-width:760px){.stats{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}header h1{font-size:26px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap">
+  <span class="tag">Modern AI Pro · Level 2 · Track B · Project B1</span>
+  <h1>Version-aware RAG: old runbooks never reach the answer</h1>
+  <p>Old and current Kafka runbooks read almost identically, so similarity search keeps serving outdated thresholds, ports and on-call teams. One metadata filter, <code style="color:#fff;background:rgba(255,255,255,.12)">where={"superseded": False}</code>, removes them <em>before</em> ranking.</p>
+  <div class="stats">
+   <div class="stat"><b><span class="a">48.8%</span> → <span class="t">0%</span></b><span>superseded chunks retrieved</span></div>
+   <div class="stat"><b>0/9 → <span class="t">9/9</span></b><span>version-conflict cases passed</span></div>
+   <div class="stat"><b>7/7 → <span class="t">7/7</span></b><span>exact-value cases (unchanged)</span></div>
+   <div class="stat"><b>+0.9 ms</b><span>latency cost of the filter</span></div>
+  </div>
+ </div>
+</header>
+
+<main>
+<section>
+ <div class="wrap">
+  <h2>Try it: filter OFF vs ON</h2>
+  <p class="sub">Your question is embedded <strong>in your browser</strong> with the same model as the Python system (all-MiniLM-L6-v2). The page then searches the 17 stored chunks twice: once by similarity alone, once with the version filter. The first search downloads the model (~90 MB, cached afterwards).</p>
+  <form class="ask" id="askform">
+   <input id="q" type="text" autocomplete="off" aria-label="Question" value="Broker 4's data volume just hit 87%. Should that have paged someone?">
+   <button id="go" type="submit">Search</button>
+  </form>
+  <div class="chips" id="chips"></div>
+  <div class="status" id="status">Model not loaded yet; it loads on the first search.</div>
+  <div class="bar" id="bar"><i id="barfill"></i></div>
+  <div class="cols">
+   <div class="col"><h3>Filter OFF: similarity only</h3><div class="verdict" id="voff">—</div><div id="off"></div></div>
+   <div class="col on"><h3>Filter ON: <code>superseded = False</code></h3><div class="verdict" id="von">—</div><div id="on"></div></div>
+  </div>
+ </div>
+</section>
+
+<section>
+ <div class="wrap">
+  <h2>The 21 frozen test cases</h2>
+  <p class="sub">Written and committed before the fix. These are the measured results from the Python system, retrieval only, top 4. Click a question to run it live above.</p>
+  <div class="tablebox"><table>
+   <thead><tr><th>ID</th><th>Type</th><th>Question</th><th>OFF</th><th>ON</th><th>Superseded retrieved OFF → ON</th></tr></thead>
+   <tbody id="cases"></tbody>
+  </table></div>
+ </div>
+</section>
+
+<section>
+ <div class="wrap">
+  <h2>How it works</h2>
+  <p class="sub">Every stage existed in the class lab except the version filter. The metadata comes from a separate <code>manifest.json</code>, so the embedded text is exactly what a reader sees.</p>
+  <div class="flow"><span class="box">16 runbooks</span><span class="arr">→</span><span class="box">load</span><span class="arr">→</span><span class="box meta">+ version metadata</span><span class="arr">→</span><span class="box">chunk</span><span class="arr">→</span><span class="box">embed (MiniLM)</span><span class="arr">→</span><span class="box">Chroma</span></div>
+  <div class="flow"><span class="box">question</span><span class="arr">→</span><span class="box">embed</span><span class="arr">→</span><span class="box new">VERSION FILTER</span><span class="arr">→</span><span class="box">top-4 by similarity</span><span class="arr">→</span><span class="box">LLM answer (Python version only)</span></div>
+  <p class="sub" style="margin-top:14px">On this page, the stored chunk vectors come from the Python pipeline, and questions are embedded in your browser with transformers.js (fp32). Checked before publishing: for all 21 test questions, filter OFF and ON, the browser returns <strong>the same top 4 in the same order</strong> as the Python system (42/42).</p>
+ </div>
+</section>
+
+<section>
+ <div class="wrap">
+  <h2>The corpus: 8 subjects, two versions each</h2>
+  <p class="sub">The fictional company is "Halcyon". Each pair shares wording and differs in its facts. Old versions carry no "superseded" banner; only the metadata knows.</p>
+  <div class="tablebox"><table>
+   <thead><tr><th>Runbook</th><th>Current file</th><th>Old file</th><th>Example of what changed (old → current)</th></tr></thead>
+   <tbody id="corpus"></tbody>
+  </table></div>
+ </div>
+</section>
+</main>
+
+<footer>
+ <div class="wrap">
+  <strong>Code and documents:</strong> <a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware">github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware</a>
+  <ul>
+   <li><a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/tree/track-b-kafka-version-aware">track-b-kafka-version-aware</a>: the full project, one commit per step, report, SOP, test plan</li>
+   <li><a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/tree/rag-deployment">rag-deployment</a>: the runnable Python system, including LLM answers (<code>./run.sh demo</code>)</li>
+   <li><a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/blob/track-b-kafka-version-aware/simple_rag/results/B1_REPORT.md">B1 report</a>: results, evidence, limitations</li>
+  </ul>
+  This page has no server and no API key: retrieval runs entirely in your browser, and nothing you type is sent anywhere except the model download from Hugging Face. Author: Shreenath Shetty.
+ </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

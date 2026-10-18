@@ -29,6 +29,16 @@ Built on `simple_rag/` from the class labs.
 | [`track-b-kafka-version-aware`](../../tree/track-b-kafka-version-aware) | The full project: one commit per step (corpus → manifest → frozen golden set → BEFORE → metadata → filter → AFTER → report), results, docs and rebuild tools | `simple_rag/results/B1_REPORT.md`, `b1-track-b/` |
 | [`rag-deployment`](../../tree/rag-deployment) | The runnable version-aware RAG: code, corpus, tests, `run.sh` | its `README.md` |
 
+## Live demo
+
+A static web demo (folder `web/`, deployed on Vercel) runs the same retrieval **in the browser**. Type a
+question and see filter OFF vs ON side by side, with all 21 test cases. The embedding model
+(all-MiniLM-L6-v2, fp32) runs in the browser via transformers.js and returns the same top-4 as the
+Python system for all 21 test questions (42/42, OFF and ON). There's no server and no API key; LLM answers
+are only in the Python version (`rag-deployment`).
+
+Run it locally: `cd web && python3 -m http.server 8000`, then open http://localhost:8000.
+
 ## Run it
 
 ```bash
