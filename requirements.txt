@@ -1,15 +1,9 @@
-openai>=1.40
-python-dotenv>=1.0
-rich>=13.7
-gradio>=4.44
-langgraph>=0.2
-# request classification (labs/classify.py) — a local zero-shot model, no API key.
-# Heavy (~2GB) but installed once; MAI_CLASSIFY=0 runs the kit without it.
-transformers>=4.44
-torch>=2.2
-# simple_rag/ — a persistent vector DB and a local embedding model. Both are
-# open source and run offline; no API key, no per-token cost. torch above is
-# already the heavy part, so these three are a small add.
-chromadb>=1.0
-sentence-transformers>=3.0
-pypdf>=4.0
+# B1 version-aware RAG — runtime only.
+openai>=1.40            # LLM client for `ask` (OpenAI-compatible endpoint)
+python-dotenv>=1.0      # reads .env
+rich>=13.7              # console tables
+chromadb>=1.0           # vector store
+sentence-transformers   # local embedder all-MiniLM-L6-v2 (no API key)
+torch                   # Intel macOS: run.sh pins torch==2.2.2, numpy<2
+transformers
+pypdf>=4.0              # rag.py can read PDFs too
