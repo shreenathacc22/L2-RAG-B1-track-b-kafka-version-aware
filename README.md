@@ -41,6 +41,7 @@ cd b1-rag && ./run.sh setup && ./run.sh demo
 - **SOP and runbook (PDF):** every step, how to test it (including inside Chroma), and every command
 - **Claude Code CLI run guide (PDF):** build the project by prompting Claude Code, step by step
 - **Flow deck (PPTX):** the problem, the flow, the results and the commands
+- **Test scenarios (PDF):** 30 copy-paste test cases with expected messages; run all of them with `python3 b1-track-b/tools/tests/run_tests.py`
 
 ## Related
 
