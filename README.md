@@ -14,6 +14,8 @@ similarity ranking.
 | Multi-hop cases passed | 0/3 | **3/3** |
 | Median retrieval latency | 50.2 ms | 51.1 ms |
 
+**Live demo (no install):** https://l2-rag-b1-track-b-kafka-version-awa.vercel.app. It runs the same retrieval in your browser, filter OFF vs ON.
+
 Author: Shreenath Shetty · Modern AI Pro Level 2, Track B, project B1.
 This branch holds only what the system needs to run. The full project history, step-by-step
 docs (SOP PDF, run guide PDF, slide deck) and rebuild tools are on branch
