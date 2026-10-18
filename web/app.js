@@ -15,7 +15,9 @@ const site = await (await fetch("data/b1.json")).json();
 const K = site.k;
 let embedder = null;
 
-const EXAMPLES = ["kafka-001", "kafka-007", "kafka-009", "kafka-005", "kafka-017", "kafka-020"];
+const EXAMPLES = ["kafka-001", "kafka-007", "kafka-005", "kafka-004", "kafka-017", "kafka-020"];
+// Display only: runbook titles without the platform prefix (the data itself is unchanged).
+const plain = (t) => t.replace(/^Kafka /, "");
 
 function setStatus(text) { $("status").textContent = text; }
 
@@ -109,7 +111,7 @@ for (const c of site.cases) {
   q.addEventListener("click", () => { $("q").value = c.question; window.scrollTo({ top: 0, behavior: "smooth" }); run(c.question); });
   const tdq = el("td"); tdq.append(q);
   const cls = (p) => (p === null ? "" : p ? "p" : "f");
-  tr.append(el("td", null, c.id), el("td", null, c.type), tdq,
+  tr.append(el("td", null, c.id.replace(/^kafka-0?/, "Q-")), el("td", null, c.type), tdq,
     el("td", cls(c.off.pass), word(c.off.pass)), el("td", cls(c.on.pass), word(c.on.pass)),
     el("td", null, `${supCount(c.off.files)} → ${supCount(c.on.files)}`));
   $("cases").append(tr);
@@ -123,7 +125,7 @@ for (const ch of site.chunks) {
 for (const [title, p] of Object.entries(pairs)) {
   const conf = (site.conflicts[title] || []).find((x) => !["owner"].includes(x.field)) || {};
   const tr = el("tr");
-  tr.append(el("td", null, title),
+  tr.append(el("td", null, plain(title)),
     el("td", null, `${p.cur.file} (v${p.cur.version}, ${p.cur.effective_date})`),
     el("td", null, `${p.old.file} (v${p.old.version}, ${p.old.effective_date})`),
     el("td", null, conf.old ? `${conf.field}: ${conf.old} → ${conf.current}` : ""));

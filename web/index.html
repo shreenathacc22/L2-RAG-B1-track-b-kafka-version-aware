@@ -4,7 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Version-Aware RAG Demo</title>
-<meta name="description" content="Live demo: a metadata filter stops superseded Kafka runbooks from reaching a RAG pipeline. Superseded chunks retrieved 48.8% to 0%, exact-string retrieval unchanged.">
+<meta name="description" content="Live demo: a version-metadata filter stops outdated documents from reaching an AI assistant. Outdated chunks retrieved 48.8% to 0%, exact-value retrieval unchanged.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Version-aware RAG: outdated documents never reach the answer">
+<meta property="og:description" content="Type a question and watch outdated documents disappear when the version filter is on. Runs entirely in your browser.">
+<meta property="og:image" content="https://l2-rag-b1-track-b-kafka-version-awa.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23E8833A'/%3E%3Ctext x='16' y='21' font-family='Arial' font-weight='700' font-size='13' text-anchor='middle' fill='white'%3EB1%3C/text%3E%3C/svg%3E">
 <style>
 :root{--ink:#1f2a37;--muted:#64748b;--bg:#ffffff;--panel:#f3f6f9;--line:#dde3ea;--teal:#0f9d8a;--teal-d:#0b6e61;--teal-l:#e3f5f1;--amber:#e8833a;--amber-d:#a8541a;--amber-l:#fdebdc;--code:#1f2a37;--codefg:#e5e7eb}
@@ -74,8 +81,8 @@ footer ul{padding-left:18px}
 <header>
  <div class="wrap">
   <span class="tag">Modern AI Pro · Level 2 · Track B · Project B1</span>
-  <h1>Version-aware RAG: old runbooks never reach the answer</h1>
-  <p>Old and current Kafka runbooks read almost identically, so similarity search keeps serving outdated thresholds, ports and on-call teams. One metadata filter, <code style="color:#fff;background:rgba(255,255,255,.12)">where={"superseded": False}</code>, removes them <em>before</em> ranking.</p>
+  <h1>Version-aware RAG: outdated documents never reach the answer</h1>
+  <p>Old and current versions of an operations runbook read almost identically, so similarity search keeps serving outdated thresholds, ports and on-call teams. One metadata filter, <code style="color:#fff;background:rgba(255,255,255,.12)">where={"superseded": False}</code>, removes them <em>before</em> ranking.</p>
   <div class="stats">
    <div class="stat"><b><span class="a">48.8%</span> → <span class="t">0%</span></b><span>superseded chunks retrieved</span></div>
    <div class="stat"><b>0/9 → <span class="t">9/9</span></b><span>version-conflict cases passed</span></div>
@@ -127,8 +134,8 @@ footer ul{padding-left:18px}
 
 <section>
  <div class="wrap">
-  <h2>The corpus: 8 subjects, two versions each</h2>
-  <p class="sub">The fictional company is "Halcyon". Each pair shares wording and differs in its facts. Old versions carry no "superseded" banner; only the metadata knows.</p>
+  <h2>The corpus: 8 operations runbooks, two versions each</h2>
+  <p class="sub">Example runbooks for a fictional company's messaging platform. Each pair shares wording and differs in its facts. Old versions carry no "superseded" banner; only the metadata knows.</p>
   <div class="tablebox"><table>
    <thead><tr><th>Runbook</th><th>Current file</th><th>Old file</th><th>Example of what changed (old → current)</th></tr></thead>
    <tbody id="corpus"></tbody>
@@ -139,11 +146,11 @@ footer ul{padding-left:18px}
 
 <footer>
  <div class="wrap">
-  <strong>Code and documents:</strong> <a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware">github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware</a>
+  <strong>Code and documents:</strong> <a href="https://github.com/shreenathacc22/version-aware-rag">github.com/shreenathacc22/version-aware-rag</a>
   <ul>
-   <li><a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/tree/track-b-kafka-version-aware">track-b-kafka-version-aware</a>: the full project, one commit per step, report, SOP, test plan</li>
-   <li><a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/tree/rag-deployment">rag-deployment</a>: the runnable Python system, including LLM answers (<code>./run.sh demo</code>)</li>
-   <li><a href="https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/blob/track-b-kafka-version-aware/simple_rag/results/B1_REPORT.md">B1 report</a>: results, evidence, limitations</li>
+   <li><a href="https://github.com/shreenathacc22/version-aware-rag/tree/track-b-kafka-version-aware">Full project</a>: the full project, one commit per step, report, SOP, test plan</li>
+   <li><a href="https://github.com/shreenathacc22/version-aware-rag/tree/rag-deployment">Runnable package</a>: the runnable Python system, including LLM answers (<code>./run.sh demo</code>)</li>
+   <li><a href="https://github.com/shreenathacc22/version-aware-rag/blob/track-b-kafka-version-aware/simple_rag/results/B1_REPORT.md">B1 report</a>: results, evidence, limitations</li>
   </ul>
   This page has no server and no API key: retrieval runs entirely in your browser, and nothing you type is sent anywhere except the model download from Hugging Face. Author: Shreenath Shetty.
  </div>

@@ -1,6 +1,6 @@
-# L2-RAG-B1 Track B: Version-Aware Retrieval (Kafka runbooks)
+# Version-Aware RAG: outdated documents never reach the answer
 
-**Problem.** Companies keep old and new versions of the same runbook. They read almost
+**Problem.** Companies keep old and new versions of the same operations runbook. They read almost
 identically, so a RAG system that ranks by similarity alone keeps handing outdated
 thresholds, ports and on-call teams to the LLM.
 
@@ -44,7 +44,7 @@ Run it locally: `cd web && python3 -m http.server 8000`, then open http://localh
 ## Run it
 
 ```bash
-git clone -b rag-deployment https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware.git b1-rag
+git clone -b rag-deployment https://github.com/shreenathacc22/version-aware-rag.git b1-rag
 cd b1-rag && ./run.sh setup && ./run.sh demo
 ```
 
