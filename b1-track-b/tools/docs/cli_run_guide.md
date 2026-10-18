@@ -7,6 +7,7 @@
 | Base folder | `~/Desktop/AI-Architect_L2_Aug_2026/project_10082026` |
 | Companion docs | SOP PDF (the full detail) and the Flow Deck, both in `b1-tracking/track-b/docs/` |
 | Status | All 12 steps done and tested; published to GitHub |
+| **Live demo** | **https://l2-rag-b1-track-b-kafka-version-awa.vercel.app** (Vercel, runs in the browser) |
 | GitHub | https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware (public): `main`, `track-b-kafka-version-aware`, `rag-deployment` |
 
 ## 1. How to use this guide
@@ -240,6 +241,25 @@ scan every file before pushing, and verify the public repo afterwards.
 ```
 **Expect:** `"visibility":"PUBLIC"`, and three branches.
 
+**Live demo on Vercel:** **https://l2-rag-b1-track-b-kafka-version-awa.vercel.app**
+
+The `main` branch holds the site (`web/`) and `vercel.json`. Vercel deploys it automatically on every
+push to `main`. It's the same retrieval, run in the browser, and it matches the Python top 4 for all 21 test
+questions (42/42).
+
+**Prompt to deploy or refresh** (the one used on 2026-10-18):
+```
+The live demo is on Vercel at https://l2-rag-b1-track-b-kafka-version-awa.vercel.app, deployed from branch main (web/ + vercel.json).
+After changing the corpus: re-ingest, regenerate web/data/b1.json, run the browser parity test
+(all 21 questions, OFF and ON, must match the Python top-4), then push main and check the live URL.
+```
+
+**You check:**
+```
+!curl -s -o /dev/null -w '%{http_code}\n' https://l2-rag-b1-track-b-kafka-version-awa.vercel.app/data/b1.json
+```
+**Expect:** `200`. Then open the link and click **Search**: the left column shows `disk-capacity-2025.md` SUPERSEDED, and the right column shows 0 superseded.
+
 **Get the code anywhere:**
 ```bash
 git clone -b rag-deployment https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware.git b1-rag-deployment
@@ -248,7 +268,7 @@ cd b1-rag-deployment && ./run.sh setup && ./run.sh ingest && ./run.sh eval
 
 ## 6. Check everything at any time
 
-**Full test plan:** `b1-track-b/docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf` has 30 copy-paste test cases with expected messages. To run all of them: `python3 b1-track-b/tools/tests/run_tests.py --shell zsh`.
+**Full test plan:** `b1-track-b/docs/B1_TrackB_Kafka_Test-Scenarios_v2_2026-10-18.pdf` has 31 copy-paste test cases with expected messages. To run all of them: `python3 b1-track-b/tools/tests/run_tests.py --shell zsh`.
 
 Quick checks:
 

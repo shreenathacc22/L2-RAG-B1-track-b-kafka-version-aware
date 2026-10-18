@@ -79,7 +79,7 @@ pres.addSection({ title: "Overview" });
 let s = pres.addSlide({ masterName: "Title Dark", sectionTitle: "Overview" });
 s.addText("B1 Version-Aware Retrieval", { placeholder: "title", bold: true, align: "left" });
 s.addText("Track B · Kafka runbooks · how the flow works, step by step", { placeholder: "body" });
-T(s, "Modern AI Pro · Level 2 · RAG Design   |   Shreenath Shetty   |   v7 · 2026-10-18",
+T(s, "Modern AI Pro · Level 2 · RAG Design   |   Shreenath Shetty   |   v8 · 2026-10-18",
   { x: M, y: 6.6, w: 12, h: 0.35, fontSize: 12, color: C.accent4 });
 circle(s, M, 1.0, 0.7, HEX.accent2, "B1", HEX.lt1, "badge");
 s.addNotes("This deck walks through Track B of project B1: making a RAG system stop answering from outdated runbooks. Steps 2 to 5 are done; Step 6, freezing the test set, is next.");
@@ -404,11 +404,12 @@ T(s, [{ text: "Negative test: ", options: { bold: true, color: HEX.dk2 } },
 s.addNotes("b1_check.py grows with each step and runs in one command. Each layer was also proven to catch mistakes by injecting errors. The ablation checks arrive with b1_eval.py in Step 7.");
 
 // ── test plan ────────────────────────────────────────────────────────────────
-s = content("Testing", "30 copy-paste test cases, all passing");
+s = content("Testing", "31 copy-paste test cases, all passing");
 const areas = [["A", "Setup", "3", "prereqs · clone · venv"], ["B", "Data", "3", "consistency · trap · fingerprints"],
   ["C", "Chroma", "4", "ingest · metadata · raw query · filter demo"], ["D", "Ablation", "6", "OFF · ON · per case · determinism · latency"],
   ["E", "LLM answers", "6", "stale threshold · exact value · unanswerable"], ["F", "Negative", "3", "broken manifest · golden · Chroma"],
   ["G", "Scenarios", "2", "wrong flag · publish new version"], ["H", "Project", "3", "freeze proof · no secrets · full rebuild"]];
+// TC-31 (live demo) is shown on the live-demo slide
 areas.forEach(([l, t, n, d], i) => {
   const x = M + (i % 4) * 3.05, y = 1.55 + Math.floor(i / 4) * 1.55;
   card(s, x, y, 2.85, 1.35, i === 4 ? HEX.accent6 : HEX.lt2, `area ${l}`);
@@ -416,10 +417,10 @@ areas.forEach(([l, t, n, d], i) => {
   T(s, n, { x: x + 2.05, y: y + 0.08, w: 0.6, h: 0.5, fontSize: 24, bold: true, color: C.accent1, align: "right", fontFace: THEME.headFontFace });
   T(s, d, { x: x + 0.2, y: y + 0.6, w: 2.5, h: 0.65, fontSize: 12, color: C.text1, valign: "top" });
 });
-codeCard(s, 4.75, 1.0, [["python3 b1-track-b/tools/tests/run_tests.py --shell zsh     # → 30 PASS · 0 FAIL", ""]], 15);
+codeCard(s, 4.75, 1.0, [["python3 b1-track-b/tools/tests/run_tests.py --shell zsh     # → 31 PASS · 0 FAIL", ""]], 15);
 T(s, [{ text: "Each case: ", options: { bold: true } }, { text: "purpose · commands to paste · expected message · pass rule. " },
   { text: "Verified 2026-10-18 from a fresh GitHub clone in zsh and bash. ", options: { bold: true, color: HEX.dk2 } },
-  { text: "PDF: b1-track-b/docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf" }],
+  { text: "PDF: b1-track-b/docs/B1_TrackB_Kafka_Test-Scenarios_v2_2026-10-18.pdf" }],
   { x: M, y: 5.95, w: 12.1, h: 0.75, fontSize: 13, color: C.text1, valign: "top" });
 s.addNotes("The test plan and the runner come from one spec file, so the PDF can't drift from what was executed. LLM-dependent cases (E) are judged on meaning; the runner reports wording differences as WARN.");
 
@@ -467,7 +468,7 @@ card(s, M, 5.3, 12.1, 0.95, HEX.accent5, "expected output", HEX.accent1);
 T(s, [{ text: "Expected: ", options: { bold: true, color: HEX.dk2 } },
   { text: "every line starts with OK and the last line is PASS (exit code 0). A FAIL line names the file and what is wrong." }],
   { x: M + 0.3, y: 5.35, w: 11.5, h: 0.85, fontSize: 15, color: C.text1, valign: "middle" });
-T(s, "Every command: SOP v7 PDF, Appendix A  ·  Driving Claude Code: Claude-CLI Run Guide PDF (both in docs/)",
+T(s, "Every command: SOP v8 PDF, Appendix A  ·  Driving Claude Code: Claude-CLI Run Guide PDF (both in docs/)",
   { x: M, y: 6.45, w: 12.1, h: 0.35, fontSize: 12, color: C.accent4 });
 s.addNotes("These commands work from any terminal on this Mac. Each command's expected output is in the SOP, in the Verify and Expect parts of each step.");
 
@@ -489,9 +490,25 @@ br.forEach(([b, t, d, fill, line], i) => {
   T(s, d, { x: x + 0.2, y: 3.6, w: 3.45, h: 0.85, fontSize: 13, color: C.text1, valign: "top" });
 });
 T(s, [{ text: "Track A ", options: { bold: true } }, { text: "(front-matter version) stays in github.com/shreenathacc22/L2-RAG-B1-version-aware-retrieval · main", options: { breakLine: true } },
+  { text: "Live demo: ", options: { bold: true, color: HEX.dk2 } }, { text: "https://l2-rag-b1-track-b-kafka-version-awa.vercel.app", options: { breakLine: true } },
   { text: "Never published: ", options: { bold: true, color: HEX.accent2 } }, { text: ".env and .env.* (API key), raw run logs (local paths), personal email (commits use the GitHub noreply address)." }],
-  { x: M, y: 4.85, w: 12.1, h: 0.95, fontSize: 14, color: C.text1, valign: "top", paraSpaceAfter: 4 });
+  { x: M, y: 4.75, w: 12.1, h: 1.5, fontSize: 14, color: C.text1, valign: "top", paraSpaceAfter: 4 });
 s.addNotes("Clone a branch with: git clone -b <branch> https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware.git. The rag-deployment branch runs on its own; the project branch carries the full history and the docs.");
+
+s = content("GitHub", "Live demo: try it in any browser");
+s.addImage({ path: require("path").join(__dirname, "live_demo.png"), x: M, y: 1.5, w: 7.6, h: 5.34, objectName: "live demo screenshot" });
+card(s, 8.45, 1.5, 4.25, 5.34, HEX.dk1, "live link card");
+T(s, [{ text: "Open", options: { color: "8FD8CC", breakLine: true } },
+  { text: "l2-rag-b1-track-b-kafka-version-awa.vercel.app", options: { color: HEX.lt1, bold: true, breakLine: true } }],
+  { x: 8.65, y: 1.65, w: 3.9, h: 1.0, fontSize: 14, fontFace: "Courier New", valign: "top", paraSpaceAfter: 4 });
+T(s, [
+  { text: "Same retrieval, run in the browser (all-MiniLM-L6-v2, fp32 via transformers.js)", options: { bullet: true, breakLine: true } },
+  { text: "Filter OFF vs ON side by side; all 21 test cases clickable", options: { bullet: true, breakLine: true } },
+  { text: "42/42 top-4 identical to the Python system", options: { bullet: true, breakLine: true, bold: true } },
+  { text: "No server, no API key; Vercel auto-deploys branch main (web/)", options: { bullet: true } }],
+  { x: 8.65, y: 2.8, w: 3.9, h: 3.0, fontSize: 13, color: HEX.lt1, valign: "top", paraSpaceAfter: 6 });
+T(s, "Test: TC-31 in the test plan", { x: 8.65, y: 6.2, w: 3.9, h: 0.4, fontSize: 12, color: "8FD8CC" });
+s.addNotes("Vercel can't host the Python system (PyTorch is 558 MB against a 250 MB limit), so the stored chunk vectors are exported once and the question is embedded in the visitor's browser with the same model. Verified in Chrome against the live URL: every one of the 42 searches matches Python.");
 
 s = content("GitHub", "Get it and run it");
 codeCard(s, 1.5, 4.85, [
@@ -656,7 +673,7 @@ s.addNotes("--table reuses the committed OFF and ON results instead of rerunning
 // ── 16. close ────────────────────────────────────────────────────────────────
 s = pres.addSlide({ masterName: "Title Dark", sectionTitle: "Recreate without Claude" });
 s.addText("Done: stale retrieval 48.8% → 0%, exact-string flat", { placeholder: "title", bold: true, align: "left" });
-s.addText("Public code: github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware · branches main · track-b-kafka-version-aware · rag-deployment",
+s.addText("Live demo: l2-rag-b1-track-b-kafka-version-awa.vercel.app · Code: github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware",
   { placeholder: "body" });
 circle(s, M, 1.0, 0.7, HEX.accent1, "✓", HEX.lt1, "badge done");
 s.addNotes("All 12 steps are complete and published. One-minute version: similarity alone served outdated runbooks for half the context; one query-time metadata filter removed them without hurting exact lookups or speed.");

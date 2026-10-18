@@ -383,4 +383,26 @@ bash b1-track-b/tools/recreate_track_b.sh ~/b1-test/rebuild 2>&1 \\
  pass_rule="Every fingerprint says MATCH."),
 ]
 
-CLEANUP = """rm -rf ~/b1-test /tmp/b1-manifest.bak /tmp/b1-golden.bak /tmp/b1-out.txt"""
+
+# ── I. Live demo ───────────────────────────────────────────────────────────
+CASES.append(dict(id="TC-31", area="I. Live demo", title="Live demo on Vercel serves the tested build",
+ purpose="The public site is up and serves exactly the data published on GitHub.",
+ commands="""U=https://l2-rag-b1-track-b-kafka-version-awa.vercel.app
+G=https://raw.githubusercontent.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/main
+for p in / /app.js /data/b1.json; do
+  echo "$(curl -s -o /dev/null -w '%{http_code}' $U$p) $p"
+done
+curl -s $U/ | grep -o "<title>[^<]*"
+curl -s $U/data/b1.json > /tmp/b1-live.json
+curl -s $G/web/data/b1.json > /tmp/b1-gh.json
+cmp -s /tmp/b1-live.json /tmp/b1-gh.json && echo "live data = GitHub main: True"
+python3 - <<'PY'
+import json
+d = json.load(open("/tmp/b1-live.json"))
+print(len(d["chunks"]), "chunks", len(d["cases"]), "cases")
+PY""",
+ expect=[r"200 /\n", r"200 /app\.js", r"200 /data/b1\.json", r"<title>Version-Aware RAG Demo", r"live data = GitHub main: True", r"17 chunks 21 cases"],
+ message="`200 /`, `200 /app.js`, `200 /data/b1.json`, `<title>Version-Aware RAG Demo`, `live data = GitHub main: True`, `17 chunks 21 cases`. Then open the link in a browser and click **Search**: the left column shows `disk-capacity-2025.md` **SUPERSEDED** at #2, and the right column shows **0 superseded**.",
+ pass_rule="All three URLs return 200, the data matches GitHub, and the browser check shows the filter effect."))
+
+CLEANUP = """rm -rf ~/b1-test /tmp/b1-manifest.bak /tmp/b1-golden.bak /tmp/b1-out.txt /tmp/b1-live.json /tmp/b1-gh.json"""

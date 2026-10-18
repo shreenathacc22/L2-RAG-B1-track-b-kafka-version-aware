@@ -8,6 +8,7 @@
 | Code | `project_10082026/track-b-kafka/` · branch `track-b` |
 | Evidence | `project_10082026/b1-tracking/track-b/runs/` |
 | Last updated | 2026-10-18 (all 12 steps complete; published to GitHub) |
+| **Live demo (Vercel)** | **https://l2-rag-b1-track-b-kafka-version-awa.vercel.app** |
 | GitHub | https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware (public) · branches `main`, `track-b-kafka-version-aware`, `rag-deployment` |
 
 ---
@@ -35,6 +36,7 @@
 
 Everything below can be rebuilt and tested from a terminal, with no AI assistant.
 
+- **Try it in a browser:** https://l2-rag-b1-track-b-kafka-version-awa.vercel.app (section 12).
 - **From GitHub:** section 11 has the clone commands for every branch.
 - **Fastest:** one command, Appendix A.1. It rebuilds Steps 0–12 in a new folder (about 2 minutes) and proves the result is identical.
 - **Step by step:** Appendix A.2 lists every command in order, with what you should see.
@@ -686,7 +688,7 @@ table), `results/latency.json`, `results/B1_REPORT.md` (limits and the guide che
 
 ## 6. Test reference
 
-**Full test plan:** `docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf` has 30 copy-paste test cases (setup, data, Chroma, ablation, LLM answers, negative tests, scenarios, project branch), each with an expected message and a pass rule. All 30 are verified from a fresh GitHub clone. To run them unattended: `python3 b1-track-b/tools/tests/run_tests.py --shell zsh` (add `--skip-llm` without a key).
+**Full test plan:** `docs/B1_TrackB_Kafka_Test-Scenarios_v2_2026-10-18.pdf` has 31 copy-paste test cases (setup, data, Chroma, ablation, LLM answers, negative tests, scenarios, project branch), each with an expected message and a pass rule. All 30 are verified from a fresh GitHub clone. To run them unattended: `python3 b1-track-b/tools/tests/run_tests.py --shell zsh` (add `--skip-llm` without a key).
 
 The quick reference:
 
@@ -721,6 +723,7 @@ python simple_rag/b1_check.py 2>&1 | tee $B/b1-tracking/track-b/runs/<stepNN-nam
 | 2026-10-18 | 11 | AFTER (filter ON, same frozen set): 0/84 = 0.0%; superseded 9/9, exact_string 7/7, multi_hop 3/3 |
 | 2026-10-18 | 12 | Fair latency (105 calls each) 50.2 vs 51.1 ms; ablation_summary.md + B1_REPORT.md; full 0–12 rebuild 210 s, all fingerprints MATCH |
 | 2026-10-18 | publish | Commit emails rewritten to the GitHub noreply address (content unchanged); pushed to the public repo (section 11) |
+| 2026-10-18 | demo | Live demo on Vercel: https://l2-rag-b1-track-b-kafka-version-awa.vercel.app; 42/42 top-4 identical to Python in Chrome; no errors |
 
 ## 8. Troubleshooting
 
@@ -761,11 +764,11 @@ npm init -y >/dev/null && npm install pptxgenjs@3
 # SOP -> PDF (headless Chrome)
 .venv/bin/python $B/tools/docs/sop_to_html.py $B/SOP.md sop.html $B/tools/docs/flow.html
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --no-pdf-header-footer \
-  --print-to-pdf="$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_SOP_v7_2026-10-18.pdf" "file://$T/sop.html"
+  --print-to-pdf="$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_SOP_v8_2026-10-18.pdf" "file://$T/sop.html"
 
 # Deck -> PPTX (slide text lives in build_deck.js; SKILL = the pptx skill folder, for apply_theme.js)
 NODE_PATH=$T/node_modules SKILL=<pptx-skill-dir> node $B/tools/docs/build_deck.js \
-  "$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_Flow_Deck_v7_2026-10-18.pptx"
+  "$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_Flow_Deck_v8_2026-10-18.pptx"
 ```
 
 The deck opens in Keynote (File → Open) or PowerPoint. The bar chart on slide 9 is drawn
@@ -779,7 +782,7 @@ with shapes, not a chart object, because Keynote doesn't render generated chart 
 
 | Branch | What's on it | Use it to |
 |---|---|---|
-| `main` | Overview README with links to everything | Start here |
+| `main` | Overview README with links to everything, plus the live demo site (`web/`, `vercel.json`) | Start here; Vercel deploys this branch |
 | `track-b-kafka-version-aware` | The full project: class repo base `6b918c2`, then one commit per B1 step (Steps 3–12), results, `b1-track-b/` (this SOP as PDF and Markdown, run guide, deck, rebuild tools) | Review the work, or rebuild every step |
 | `rag-deployment` | Only what the finished version-aware RAG needs to run, plus `run.sh` and a README | Run the system |
 
@@ -819,6 +822,47 @@ gh repo create shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware --public --d
 git push origin track-b:track-b-kafka-version-aware      # local branch name is track-b
 git push origin rag-deployment main
 ```
+
+## 12. Live demo on Vercel
+
+**Link (public, no login):** **https://l2-rag-b1-track-b-kafka-version-awa.vercel.app**
+
+**What it is:** a static page that runs the B1 retrieval **in the visitor's browser**. Type a question and
+see filter OFF vs ON side by side, with superseded runbooks highlighted. All 21 golden cases are listed
+(click one to run it), along with how it works and the corpus.
+
+**Why not the Python system?** Vercel functions are limited to 250 MB, and PyTorch alone is 558 MB. So the
+17 chunk vectors are exported from Chroma once, and the question is embedded in the browser with
+transformers.js, using the same model (all-MiniLM-L6-v2) at fp32. There's no server and no API key. LLM
+answers exist only in the Python `rag-deployment` branch.
+
+**Proof it's the same system:** for all 21 golden questions, with the filter OFF and ON, the live site returns
+the **same top 4 in the same order** as the Python pipeline. Tested in Chrome on 2026-10-18: **42/42**, no page
+errors, no mobile overflow, first search (model download included) 3.1 s.
+
+| Item | Where |
+|---|---|
+| Site source | branch `main`: `web/index.html`, `web/app.js`, `web/data/b1.json` |
+| Vercel config | branch `main`: `vercel.json` (serves `web/`, no build step) |
+| Source copy | `b1-tracking/track-b/web/` (local) |
+| Vercel project | `l2-rag-b1-track-b-kafka-version-aware` (dashboard: owner only) |
+
+**Test it (copy-paste):**
+```bash
+U=https://l2-rag-b1-track-b-kafka-version-awa.vercel.app
+for p in / /app.js /data/b1.json; do
+  echo "$(curl -s -o /dev/null -w '%{http_code}' $U$p) $p"
+done
+curl -s $U/data/b1.json | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d['chunks']),'chunks',len(d['cases']),'cases')"
+```
+Expect `200 /`, `200 /app.js`, `200 /data/b1.json`, and `17 chunks 21 cases`. Then, in a browser, click **Search**:
+the left column shows `disk-capacity-2025.md` marked **SUPERSEDED** at #2, and the right column says
+**0 superseded**. This is test case TC-31 in the test plan.
+
+**Update the site:** commit to `web/` on `main` and push. Vercel redeploys automatically, and the
+deployment status appears on the GitHub commit. To rebuild the data file after a corpus change, re-ingest,
+then run the export in `b1-tracking/track-b/web/` again (it reads Chroma, the manifest, the golden set and
+the results).
 
 ---
 

@@ -2,11 +2,12 @@
 
 | | |
 |---|---|
-| What this is | 30 copy-paste test cases that prove the B1 system works, from a clean clone of the public GitHub repo |
+| What this is | 31 copy-paste test cases that prove the B1 system works, from a clean clone of the public GitHub repo, plus the live demo |
 | Repo | https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware (branches `rag-deployment`, `track-b-kafka-version-aware`) |
+| Live demo | https://l2-rag-b1-track-b-kafka-version-awa.vercel.app (TC-31) |
 | Works in | macOS Terminal (zsh) or bash. Everything happens in `~/b1-test`, which is deleted at the end |
-| Time | About 8 minutes for all 30 (TC-30 alone takes about 4) |
-| Verified | 2026-10-18: all 30 PASS from a fresh GitHub clone (bash); shell-heavy cases re-verified in zsh |
+| Time | About 8 minutes for all 31 (TC-30 alone takes about 4) |
+| Verified | 2026-10-18: all 31 PASS from a fresh GitHub clone (zsh and bash); live site 42/42 in Chrome |
 
 ## 1. How to use this document
 
@@ -16,12 +17,12 @@
 4. Tick **Pass** or **Fail** in the test record (section 4).
 5. Run the cases **in order**. Later cases use what earlier ones built (see **Pre-condition**).
 
-**Automatic alternative:** the same 30 cases run unattended with one command, which checks every expected message for you:
+**Automatic alternative:** the same 31 cases run unattended with one command, which checks every expected message for you:
 ```bash
 git clone -q -b track-b-kafka-version-aware https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware.git /tmp/b1-tests-src
 python3 /tmp/b1-tests-src/b1-track-b/tools/tests/run_tests.py --shell zsh      # add --skip-llm if you have no .env
 ```
-Expect the last line `30 PASS · 0 WARN · 0 FAIL · 0 SKIP`. LLM-worded answers are WARN, not FAIL, if the wording differs.
+Expect the last line `31 PASS · 0 WARN · 0 FAIL · 0 SKIP`. LLM-worded answers are WARN, not FAIL, if the wording differs.
 
 ## 2. Test matrix
 
@@ -57,6 +58,7 @@ Expect the last line `30 PASS · 0 WARN · 0 FAIL · 0 SKIP`. LLM-worded answers
 | TC‑28 | Project branch | The golden set was frozen before any code change | — | < 1 min | freeze before code: True |
 | TC‑29 | Project branch | No secrets or personal email in the public repo | — | < 1 min | all zero |
 | TC‑30 | Project branch | Rebuild every step from scratch (optional, ~4 min) | — | ~4 min | 7 × MATCH · Done |
+| TC‑31 | Live demo | Live demo on Vercel serves the tested build | — | < 1 min | 3 × 200 · live data = GitHub |
 
 ## 3. Test cases
 
@@ -665,12 +667,43 @@ bash b1-track-b/tools/recreate_track_b.sh ~/b1-test/rebuild 2>&1 \
 
 **Pass rule:** Every fingerprint says MATCH.
 
+### I. Live demo
+
+*Pre-condition for this group:* None (internet only). Can be run on its own, at any time.
+
+#### TC-31 · Live demo on Vercel serves the tested build
+
+**Purpose:** The public site is up and serves exactly the data published on GitHub.
+
+**Commands** (copy all, paste, Enter):
+
+```bash
+U=https://l2-rag-b1-track-b-kafka-version-awa.vercel.app
+G=https://raw.githubusercontent.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware/main
+for p in / /app.js /data/b1.json; do
+  echo "$(curl -s -o /dev/null -w '%{http_code}' $U$p) $p"
+done
+curl -s $U/ | grep -o "<title>[^<]*"
+curl -s $U/data/b1.json > /tmp/b1-live.json
+curl -s $G/web/data/b1.json > /tmp/b1-gh.json
+cmp -s /tmp/b1-live.json /tmp/b1-gh.json && echo "live data = GitHub main: True"
+python3 - <<'PY'
+import json
+d = json.load(open("/tmp/b1-live.json"))
+print(len(d["chunks"]), "chunks", len(d["cases"]), "cases")
+PY
+```
+
+**Expected message:** `200 /`, `200 /app.js`, `200 /data/b1.json`, `<title>Version-Aware RAG Demo`, `live data = GitHub main: True`, `17 chunks 21 cases`. Then open the link in a browser and click **Search**: the left column shows `disk-capacity-2025.md` **SUPERSEDED** at #2, and the right column shows **0 superseded**.
+
+**Pass rule:** All three URLs return 200, the data matches GitHub, and the browser check shows the filter effect.
+
 ### Cleanup
 
 Run this when you're finished. It deletes the test folder, including the `.env` copy made in TC-17:
 
 ```bash
-rm -rf ~/b1-test /tmp/b1-manifest.bak /tmp/b1-golden.bak /tmp/b1-out.txt
+rm -rf ~/b1-test /tmp/b1-manifest.bak /tmp/b1-golden.bak /tmp/b1-out.txt /tmp/b1-live.json /tmp/b1-gh.json
 ```
 
 ## 4. Test record
@@ -707,8 +740,9 @@ rm -rf ~/b1-test /tmp/b1-manifest.bak /tmp/b1-golden.bak /tmp/b1-out.txt
 | TC-28 | The golden set was frozen before any code change | ☐ | ☐ | |
 | TC-29 | No secrets or personal email in the public repo | ☐ | ☐ | |
 | TC-30 | Rebuild every step from scratch (optional, ~4 min) | ☐ | ☐ | |
+| TC-31 | Live demo on Vercel serves the tested build | ☐ | ☐ | |
 
-Tested by: ____________________   Date: ____________   Result: ____ / 30 PASS
+Tested by: ____________________   Date: ____________   Result: ____ / 31 PASS
 
 ## 5. If a test fails
 

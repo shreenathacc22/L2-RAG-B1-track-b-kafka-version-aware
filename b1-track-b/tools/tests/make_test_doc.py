@@ -17,6 +17,7 @@ PRE = {
     "F. Negative tests": "TC-03 done. Each test restores the data itself.",
     "G. Scenarios": "TC-07 done. Each scenario restores the published corpus at the end.",
     "H. Project branch": "TC-02 done. TC-30 also needs TC-03 (it reuses that Python environment).",
+    "I. Live demo": "None (internet only). Can be run on its own, at any time.",
 }
 TIME = {"TC-03": "~1–2 min", "TC-30": "~4 min"}
 KEY = {
@@ -31,17 +32,19 @@ KEY = {
     "TC-23": "exit=1 … restored: PASS", "TC-24": "FAIL (4) … restored: PASS", "TC-25": "exit=1 · FAIL (18)",
     "TC-26": "swap serves 2025 file; restore fixes", "TC-27": "only disk-capacity-v4.md served",
     "TC-28": "freeze before code: True", "TC-29": "all zero", "TC-30": "7 × MATCH · Done",
+    "TC-31": "3 × 200 · live data = GitHub",
 }
 
 out = []
 w = out.append
 w("# Test Scenarios: B1 Track B Version-Aware RAG\n")
 w("| | |\n|---|---|")
-w("| What this is | 30 copy-paste test cases that prove the B1 system works, from a clean clone of the public GitHub repo |")
+w("| What this is | 31 copy-paste test cases that prove the B1 system works, from a clean clone of the public GitHub repo, plus the live demo |")
 w("| Repo | https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware (branches `rag-deployment`, `track-b-kafka-version-aware`) |")
+w("| Live demo | https://l2-rag-b1-track-b-kafka-version-awa.vercel.app (TC-31) |")
 w("| Works in | macOS Terminal (zsh) or bash. Everything happens in `~/b1-test`, which is deleted at the end |")
-w("| Time | About 8 minutes for all 30 (TC-30 alone takes about 4) |")
-w("| Verified | 2026-10-18: all 30 PASS from a fresh GitHub clone (bash); shell-heavy cases re-verified in zsh |")
+w("| Time | About 8 minutes for all 31 (TC-30 alone takes about 4) |")
+w("| Verified | 2026-10-18: all 31 PASS from a fresh GitHub clone (zsh and bash); live site 42/42 in Chrome |")
 w("")
 w("## 1. How to use this document\n")
 w("1. Open **Terminal**.")
@@ -50,12 +53,12 @@ w("3. Compare what you see with **Expected message**. Small differences in timin
 w("4. Tick **Pass** or **Fail** in the test record (section 4).")
 w("5. Run the cases **in order**. Later cases use what earlier ones built (see **Pre-condition**).")
 w("")
-w("**Automatic alternative:** the same 30 cases run unattended with one command, which checks every expected message for you:")
+w("**Automatic alternative:** the same 31 cases run unattended with one command, which checks every expected message for you:")
 w("```bash")
 w("git clone -q -b track-b-kafka-version-aware https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware.git /tmp/b1-tests-src")
 w("python3 /tmp/b1-tests-src/b1-track-b/tools/tests/run_tests.py --shell zsh      # add --skip-llm if you have no .env")
 w("```")
-w("Expect the last line `30 PASS · 0 WARN · 0 FAIL · 0 SKIP`. LLM-worded answers are WARN, not FAIL, if the wording differs.")
+w("Expect the last line `31 PASS · 0 WARN · 0 FAIL · 0 SKIP`. LLM-worded answers are WARN, not FAIL, if the wording differs.")
 w("")
 w("## 2. Test matrix\n")
 w("| ID | Area | Test | LLM / key | Time | Key expected result |")
@@ -97,7 +100,7 @@ w("|---|---|---|---|---|")
 for c in CASES:
     w(f"| {c['id']} | {c['title']} | ☐ | ☐ | |")
 w("")
-w("Tested by: ____________________   Date: ____________   Result: ____ / 30 PASS\n")
+w("Tested by: ____________________   Date: ____________   Result: ____ / 31 PASS\n")
 w("## 5. If a test fails\n")
 w("| Symptom | Likely cause | Fix |")
 w("|---|---|---|")

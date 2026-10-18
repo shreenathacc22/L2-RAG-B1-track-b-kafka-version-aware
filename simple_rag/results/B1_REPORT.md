@@ -83,6 +83,8 @@ directly in the database.
 
 ## Code on GitHub
 
+Live demo (Vercel): https://l2-rag-b1-track-b-kafka-version-awa.vercel.app. It runs the same retrieval in the browser, filter OFF vs ON, and its top 4 is identical to this system for all 21 test questions.
+
 Public repo: https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware
 
 | Branch | Contents |
