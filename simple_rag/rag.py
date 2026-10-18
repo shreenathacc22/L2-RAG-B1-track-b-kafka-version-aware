@@ -45,6 +45,23 @@ CHROMA_DIR = Path(__file__).resolve().parent / ".chroma"
 COLLECTION = os.environ.get("RAG_COLLECTION", "aventro")
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"   # 384-dim, ~90MB, Apache-2.0
 
+# B1: version metadata. If the corpus folder has a manifest.json, its four fields
+# are attached to every chunk of the matching file at ingest. `doc` is renamed
+# `doc_title`: chunks already use `doc` for the file stem. Corpora without a
+# manifest (Aventro) are unchanged.
+B1_FIELDS = ("doc_title", "version", "effective_date", "superseded")
+
+
+def b1_metadata(path: Path) -> dict:
+    manifest = path.parent / "manifest.json"
+    if not manifest.exists():
+        return {}
+    meta = json.loads(manifest.read_text(encoding="utf-8"))["files"].get(path.name)
+    if meta is None:
+        return {}
+    return {"doc_title": meta["doc"], "version": meta["version"],
+            "effective_date": meta["effective_date"], "superseded": meta["superseded"]}
+
 
 # ══ Stage 1 · LOAD ═══════════════════════════════════════════════════════════
 # Getting bytes off disk and into text is where corpora quietly break: a scanned
@@ -94,7 +111,7 @@ def load(formats: list[str], dedupe: bool) -> list[dict]:
                 doc = {"stem": path.stem, "fmt": fmt, "path": str(path.relative_to(ROOT)),
                        "text": text, "chars": len(text), "words": len(text.split()),
                        "bytes": path.stat().st_size, "ms": ms, "error": err,
-                       "indexed": True, **extra}
+                       "indexed": True, **extra, **b1_metadata(path)}
                 docs.append(doc)
                 event("load", **{k: v for k, v in doc.items() if k != "text"})
 
@@ -228,7 +245,9 @@ def chunk_all(docs: list[dict], target_words: int, overlap: int,
             pieces = chunk(d["text"], d["stem"], target_words, overlap, min_words)
             for i, p in enumerate(pieces):
                 chunks.append({"id": f"{d['fmt']}:{d['stem']}#{i}", "doc": d["stem"],
-                               "fmt": d["fmt"], "path": d["path"], "seq": i, **p})
+                               "fmt": d["fmt"], "path": d["path"], "seq": i, **p,
+                               # B1: version metadata rides from the doc onto every chunk
+                               **{k: d[k] for k in B1_FIELDS if k in d}})
             event("chunk", doc=d["stem"], fmt=d["fmt"], chunks=len(pieces),
                   doc_words=d["words"],
                   words=[p["words"] for p in pieces],
@@ -354,7 +373,10 @@ def store(chunks: list[dict], vecs: list[list[float]], reset: bool) -> None:
                     documents=[c["text"] for c in part],
                     metadatas=[{"doc": c["doc"], "fmt": c["fmt"], "path": c["path"],
                                 "heading": c["heading"], "seq": c["seq"],
-                                "words": c["words"]} for c in part])
+                                "words": c["words"],
+                                # B1: stored in Chroma so the query can filter on it
+                                **{k: c[k] for k in B1_FIELDS if k in c}}
+                               for c in part])
             event("store_batch", n=len(part),
                   ms=round((time.perf_counter() - t0) * 1000))
         obs["count"] = col.count()

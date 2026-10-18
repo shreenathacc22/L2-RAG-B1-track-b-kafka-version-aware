@@ -2,6 +2,7 @@
 
     python simple_rag/b1_check.py            # every check whose inputs exist
     python simple_rag/b1_check.py --no-trap  # skip the embedding measurement (fast)
+    python simple_rag/b1_check.py --no-trap --chroma   # also inspect the vector store (after ingest)
 
 Checks grow with the project; a check whose file does not exist yet is reported
 as "not yet" instead of failing, so this one command works at every step.
@@ -18,6 +19,10 @@ as "not yet" instead of failing, so this one command works at every step.
                        must_not_contain string is in the old file and NOT in the
                        current one; every exact_string value is really in its cited
                        file; questions are paraphrased, not copied from the runbooks
+    Step 8  --chroma   reads the stored chunks straight from Chroma: every chunk carries
+                       doc_title/version/effective_date/superseded with the right types and
+                       the manifest's values, all 16 files are present, and Chroma's own
+                       where-filter splits the chunks into 8 current and 8 superseded files
 
 Exit code 0 = every check that ran passed.
 """
@@ -332,6 +337,70 @@ def check_golden() -> None:
              f"{sum(not m['superseded'] for m in files.values())}")
 
 
+# ── Step 8: metadata inside Chroma ───────────────────────────────────────────
+
+CHROMA_TYPES = {"doc_title": str, "version": int, "effective_date": str, "superseded": bool}
+
+
+def check_chroma() -> None:
+    os.environ.setdefault("RAG_TRACE", "0")
+    sys.path.insert(0, str(HERE))
+    import rag  # noqa: E402
+    rag.COLLECTION = os.environ.get("RAG_COLLECTION", "kafka")
+    print(f"\n[Step 8] Chroma  ·  {rag.CHROMA_DIR.relative_to(HERE.parent)} · collection '{rag.COLLECTION}'")
+    n_before = len(failures)
+    col = rag.collection()
+    got = col.get(include=["metadatas"])
+    ids, metas = got["ids"], got["metadatas"]
+    if not ids:
+        fail("collection is empty — run: RAG_CORPUS=simple_rag/corpus/kafka RAG_COLLECTION=kafka "
+             "python simple_rag/rag.py ingest --formats md")
+        return
+    files = json.loads(MANIFEST.read_text(encoding="utf-8"))["files"]
+
+    print(f"        {'chunk id':<38} {'version':>7}  {'effective':<10}  superseded")
+    for cid, m in sorted(zip(ids, metas)):
+        print(f"        {cid:<38} {str(m.get('version')):>7}  {str(m.get('effective_date')):<10}  "
+              f"{m.get('superseded')}")
+        name = Path(m["path"]).name
+        missing = [k for k in CHROMA_TYPES if k not in m]
+        if missing:
+            fail(f"{cid}: no {missing} in Chroma metadata — was it ingested before Step 8?")
+            continue
+        for k, t in CHROMA_TYPES.items():
+            if not isinstance(m[k], t) or (t is int and isinstance(m[k], bool)):
+                fail(f"{cid}: {k}={m[k]!r} is {type(m[k]).__name__}, expected {t.__name__}")
+        want = files.get(name)
+        if want is None:
+            fail(f"{cid}: {name} is not in manifest.json")
+        elif (m["doc_title"], m["version"], m["effective_date"], m["superseded"]) != \
+                (want["doc"], want["version"], want["effective_date"], want["superseded"]):
+            fail(f"{cid}: Chroma metadata differs from manifest.json for {name}")
+    if len(failures) == n_before:
+        ok(f"{len(ids)} chunks, every one carries doc_title, version, effective_date, superseded "
+           "with the right types")
+        ok("every chunk's values match manifest.json for its file")
+
+    stored = {Path(m["path"]).name for m in metas}
+    if stored == set(files):
+        ok(f"all {len(files)} runbooks are in the collection")
+    else:
+        fail(f"files missing from Chroma: {sorted(set(files) - stored)}")
+
+    # The exact condition Step 9 will add to the query, tried here on its own.
+    cur = col.get(where={"superseded": False}, include=["metadatas"])
+    old = col.get(where={"superseded": True}, include=["metadatas"])
+    cur_files = {Path(m["path"]).name for m in cur["metadatas"]}
+    old_files = {Path(m["path"]).name for m in old["metadatas"]}
+    info(f'where={{"superseded": False}} -> {len(cur["ids"])} chunks from {len(cur_files)} files; '
+         f'where={{"superseded": True}} -> {len(old["ids"])} chunks from {len(old_files)} files')
+    if (all(not files[f]["superseded"] for f in cur_files) and all(files[f]["superseded"] for f in old_files)
+            and len(cur["ids"]) + len(old["ids"]) == len(ids) and len(cur_files) == len(old_files) == 8):
+        ok("Chroma's where-filter splits the store cleanly: 8 current files vs 8 superseded files")
+    else:
+        fail("Chroma's where-filter does not split current and superseded cleanly")
+
+
 def main() -> int:
     print("B1 data checks · Track B")
     if CORPUS.exists():
@@ -348,6 +417,8 @@ def main() -> int:
         check_golden()
     else:
         info("golden_kafka.jsonl — not yet (Step 5)")
+    if "--chroma" in sys.argv:
+        check_chroma()
     print(f"\n{'PASS' if not failures else f'FAIL ({len(failures)})'}")
     return 1 if failures else 0
 
