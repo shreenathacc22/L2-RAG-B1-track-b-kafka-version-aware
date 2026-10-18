@@ -31,7 +31,9 @@ Built on `simple_rag/` from the class labs.
 
 ## Live demo
 
-A static web demo (folder `web/`, deployed on Vercel) runs the same retrieval **in the browser**. Type a
+**Open it: https://l2-rag-b1-track-b-kafka-version-awa.vercel.app**
+
+A static web demo (folder `web/`, deployed on Vercel from this branch) runs the same retrieval **in the browser**. Type a
 question and see filter OFF vs ON side by side, with all 21 test cases. The embedding model
 (all-MiniLM-L6-v2, fp32) runs in the browser via transformers.js and returns the same top-4 as the
 Python system for all 21 test questions (42/42, OFF and ON). There's no server and no API key; LLM answers
@@ -51,7 +53,7 @@ cd b1-rag && ./run.sh setup && ./run.sh demo
 - **SOP and runbook (PDF):** every step, how to test it (including inside Chroma), and every command
 - **Claude Code CLI run guide (PDF):** build the project by prompting Claude Code, step by step
 - **Flow deck (PPTX):** the problem, the flow, the results and the commands
-- **Test scenarios (PDF):** 30 copy-paste test cases with expected messages; run all of them with `python3 b1-track-b/tools/tests/run_tests.py`
+- **Test scenarios (PDF):** 31 copy-paste test cases with expected messages; run all of them with `python3 b1-track-b/tools/tests/run_tests.py`
 
 ## Related
 
