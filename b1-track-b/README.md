@@ -9,14 +9,21 @@ multi-hop **0/3 → 3/3**, latency **+0.9 ms**. See `simple_rag/results/B1_REPOR
 
 | Path | What it is |
 |---|---|
-| `docs/B1_TrackB_Kafka_Version-Aware-Retrieval_SOP_v6_2026-10-18.pdf` | SOP and runbook: every step, test and command (Appendix A) |
-| `docs/B1_TrackB_Kafka_Claude-CLI_Run-Guide_v4_2026-10-18.pdf` | How to build it step by step with the Claude Code CLI |
-| `docs/B1_TrackB_Kafka_Version-Aware-Retrieval_Flow_Deck_v6_2026-10-18.pptx` | Slide deck: the flow, the results, all commands |
+| `docs/B1_TrackB_Kafka_Version-Aware-Retrieval_SOP_v7_2026-10-18.pdf` | SOP and runbook: every step, test and command (Appendix A) |
+| `docs/B1_TrackB_Kafka_Claude-CLI_Run-Guide_v5_2026-10-18.pdf` | How to build it step by step with the Claude Code CLI |
+| `docs/B1_TrackB_Kafka_Version-Aware-Retrieval_Flow_Deck_v7_2026-10-18.pptx` | Slide deck: the flow, the results, all commands |
+| `docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf` | **30 copy-paste test cases** with expected messages and pass rules |
 | `SOP.md` | Markdown source of the SOP |
 | `tools/recreate_track_b.sh` | Rebuilds Steps 0–12 from a fresh clone and checks fingerprints |
 | `tools/make_corpus.py`, `tools/make_golden.py` | Regenerate the 16 runbooks + manifest and the 21 golden cases, byte for byte |
 | `tools/source/` | The B1 source files as committed at each step |
 | `tools/docs/` | Scripts that rebuild the PDFs and the deck |
+| `tools/tests/` | The test plan source (`test_cases.py`), the PDF generator and `run_tests.py`, which runs all 30 cases |
+
+**Run all 30 tests** (from the root of this branch):
+```bash
+python3 b1-track-b/tools/tests/run_tests.py --shell zsh      # add --skip-llm without an API key
+```
 
 **Rebuild everything** (from the root of this branch):
 ```bash

@@ -79,7 +79,7 @@ pres.addSection({ title: "Overview" });
 let s = pres.addSlide({ masterName: "Title Dark", sectionTitle: "Overview" });
 s.addText("B1 Version-Aware Retrieval", { placeholder: "title", bold: true, align: "left" });
 s.addText("Track B · Kafka runbooks · how the flow works, step by step", { placeholder: "body" });
-T(s, "Modern AI Pro · Level 2 · RAG Design   |   Shreenath Shetty   |   v6 · 2026-10-18",
+T(s, "Modern AI Pro · Level 2 · RAG Design   |   Shreenath Shetty   |   v7 · 2026-10-18",
   { x: M, y: 6.6, w: 12, h: 0.35, fontSize: 12, color: C.accent4 });
 circle(s, M, 1.0, 0.7, HEX.accent2, "B1", HEX.lt1, "badge");
 s.addNotes("This deck walks through Track B of project B1: making a RAG system stop answering from outdated runbooks. Steps 2 to 5 are done; Step 6, freezing the test set, is next.");
@@ -403,6 +403,26 @@ T(s, [{ text: "Negative test: ", options: { bold: true, color: HEX.dk2 } },
   { x: M + 0.3, y: 5.57, w: 11.5, h: 0.9, fontSize: 14, color: C.text1, valign: "middle" });
 s.addNotes("b1_check.py grows with each step and runs in one command. Each layer was also proven to catch mistakes by injecting errors. The ablation checks arrive with b1_eval.py in Step 7.");
 
+// ── test plan ────────────────────────────────────────────────────────────────
+s = content("Testing", "30 copy-paste test cases, all passing");
+const areas = [["A", "Setup", "3", "prereqs · clone · venv"], ["B", "Data", "3", "consistency · trap · fingerprints"],
+  ["C", "Chroma", "4", "ingest · metadata · raw query · filter demo"], ["D", "Ablation", "6", "OFF · ON · per case · determinism · latency"],
+  ["E", "LLM answers", "6", "stale threshold · exact value · unanswerable"], ["F", "Negative", "3", "broken manifest · golden · Chroma"],
+  ["G", "Scenarios", "2", "wrong flag · publish new version"], ["H", "Project", "3", "freeze proof · no secrets · full rebuild"]];
+areas.forEach(([l, t, n, d], i) => {
+  const x = M + (i % 4) * 3.05, y = 1.55 + Math.floor(i / 4) * 1.55;
+  card(s, x, y, 2.85, 1.35, i === 4 ? HEX.accent6 : HEX.lt2, `area ${l}`);
+  T(s, `${l}. ${t}`, { x: x + 0.2, y: y + 0.12, w: 1.9, h: 0.4, fontSize: 15, bold: true, color: C.text1 });
+  T(s, n, { x: x + 2.05, y: y + 0.08, w: 0.6, h: 0.5, fontSize: 24, bold: true, color: C.accent1, align: "right", fontFace: THEME.headFontFace });
+  T(s, d, { x: x + 0.2, y: y + 0.6, w: 2.5, h: 0.65, fontSize: 12, color: C.text1, valign: "top" });
+});
+codeCard(s, 4.75, 1.0, [["python3 b1-track-b/tools/tests/run_tests.py --shell zsh     # → 30 PASS · 0 FAIL", ""]], 15);
+T(s, [{ text: "Each case: ", options: { bold: true } }, { text: "purpose · commands to paste · expected message · pass rule. " },
+  { text: "Verified 2026-10-18 from a fresh GitHub clone in zsh and bash. ", options: { bold: true, color: HEX.dk2 } },
+  { text: "PDF: b1-track-b/docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf" }],
+  { x: M, y: 5.95, w: 12.1, h: 0.75, fontSize: 13, color: C.text1, valign: "top" });
+s.addNotes("The test plan and the runner come from one spec file, so the PDF can't drift from what was executed. LLM-dependent cases (E) are judged on meaning; the runner reports wording differences as WARN.");
+
 // ── 11. next ─────────────────────────────────────────────────────────────────
 s = content("Testing", "Steps 11–12: the result");
 const nxt = [["7", "BEFORE ✓", "48.8% superseded"], ["8", "Metadata ✓", "17/17 chunks tagged"],
@@ -447,7 +467,7 @@ card(s, M, 5.3, 12.1, 0.95, HEX.accent5, "expected output", HEX.accent1);
 T(s, [{ text: "Expected: ", options: { bold: true, color: HEX.dk2 } },
   { text: "every line starts with OK and the last line is PASS (exit code 0). A FAIL line names the file and what is wrong." }],
   { x: M + 0.3, y: 5.35, w: 11.5, h: 0.85, fontSize: 15, color: C.text1, valign: "middle" });
-T(s, "Every command: SOP v6 PDF, Appendix A  ·  Driving Claude Code: Claude-CLI Run Guide PDF (both in docs/)",
+T(s, "Every command: SOP v7 PDF, Appendix A  ·  Driving Claude Code: Claude-CLI Run Guide PDF (both in docs/)",
   { x: M, y: 6.45, w: 12.1, h: 0.35, fontSize: 12, color: C.accent4 });
 s.addNotes("These commands work from any terminal on this Mac. Each command's expected output is in the SOP, in the Verify and Expect parts of each step.");
 

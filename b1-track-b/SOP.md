@@ -686,6 +686,10 @@ table), `results/latency.json`, `results/B1_REPORT.md` (limits and the guide che
 
 ## 6. Test reference
 
+**Full test plan:** `docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf` has 30 copy-paste test cases (setup, data, Chroma, ablation, LLM answers, negative tests, scenarios, project branch), each with an expected message and a pass rule. All 30 are verified from a fresh GitHub clone. To run them unattended: `python3 b1-track-b/tools/tests/run_tests.py --shell zsh` (add `--skip-llm` without a key).
+
+The quick reference:
+
 | What | Command (from `track-b-kafka/`) | Pass criterion | Available from |
 |---|---|---|---|
 | All data checks | `python simple_rag/b1_check.py` | ends with `PASS` | Step 3 |
@@ -757,11 +761,11 @@ npm init -y >/dev/null && npm install pptxgenjs@3
 # SOP -> PDF (headless Chrome)
 .venv/bin/python $B/tools/docs/sop_to_html.py $B/SOP.md sop.html $B/tools/docs/flow.html
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --no-pdf-header-footer \
-  --print-to-pdf="$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_SOP_v6_2026-10-18.pdf" "file://$T/sop.html"
+  --print-to-pdf="$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_SOP_v7_2026-10-18.pdf" "file://$T/sop.html"
 
 # Deck -> PPTX (slide text lives in build_deck.js; SKILL = the pptx skill folder, for apply_theme.js)
 NODE_PATH=$T/node_modules SKILL=<pptx-skill-dir> node $B/tools/docs/build_deck.js \
-  "$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_Flow_Deck_v6_2026-10-18.pptx"
+  "$B/docs/B1_TrackB_Kafka_Version-Aware-Retrieval_Flow_Deck_v7_2026-10-18.pptx"
 ```
 
 The deck opens in Keynote (File → Open) or PowerPoint. The bar chart on slide 9 is drawn

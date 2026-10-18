@@ -248,6 +248,10 @@ cd b1-rag-deployment && ./run.sh setup && ./run.sh ingest && ./run.sh eval
 
 ## 6. Check everything at any time
 
+**Full test plan:** `b1-track-b/docs/B1_TrackB_Kafka_Test-Scenarios_v1_2026-10-18.pdf` has 30 copy-paste test cases with expected messages. To run all of them: `python3 b1-track-b/tools/tests/run_tests.py --shell zsh`.
+
+Quick checks:
+
 ```bash
 cd ~/Desktop/AI-Architect_L2_Aug_2026/project_10082026/track-b-kafka
 source .venv/bin/activate        # or: source ../mai-practitioner-labs/.venv/bin/activate

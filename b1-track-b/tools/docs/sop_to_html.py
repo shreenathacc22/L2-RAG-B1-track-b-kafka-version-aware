@@ -64,6 +64,8 @@ cover = f"""<div class="cover"><h1>{title}</h1>
 <p>Modern AI Pro · Level 2 · Track B · RAG Design · Owner: Shreenath Shetty</p>
 <span class="tag">{TAG}</span></div>"""
 css = css.replace("__FOOTER__", FOOTER)
+if os.environ.get("DOC_PRE_NOWRAP") == "1":   # copy-paste docs: never wrap a command line
+    css += "\npre { white-space: pre; overflow: hidden; } pre code { font-size: 7.5pt; }\n"
 if os.environ.get("DOC_H2_BREAK", "1") == "0":
     css += "\nh2 { break-before: auto !important; margin-top: 26px; }\n"
 open(out, "w", encoding="utf-8").write(f"<!doctype html><html><head><meta charset='utf-8'><title>{title}</title><style>{css}</style></head><body>{cover}{body}</body></html>")
