@@ -31,7 +31,7 @@ Built on `simple_rag/` from the class labs.
 
 ## Live demo
 
-**Open it: https://l2-rag-b1-track-b-kafka-version-awa.vercel.app**
+**Open it: https://version-aware-rag.vercel.app**
 
 A static web demo (folder `web/`, deployed on Vercel from this branch) runs the same retrieval **in the browser**. Type a
 question and see filter OFF vs ON side by side, with all 21 test cases. The embedding model
