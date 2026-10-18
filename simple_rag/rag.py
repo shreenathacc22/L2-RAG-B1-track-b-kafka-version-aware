@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import statistics
 import sys
@@ -36,9 +37,12 @@ from observe import RUN_ID, TRACE_FILE, event, histogram, kv, say, spread, stage
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "labs"))          # reuse the class kit's LLM client
-CORPUS = ROOT / "corpus" / "aventro"
+# B1: choose the corpus and collection from the environment, so the Kafka runs
+# and the Aventro lab share one pipeline. Unset = the lab's original behaviour.
+#   RAG_CORPUS=simple_rag/corpus/kafka RAG_COLLECTION=kafka python simple_rag/rag.py ingest --formats md
+CORPUS = ROOT / os.environ.get("RAG_CORPUS", "corpus/aventro")
 CHROMA_DIR = Path(__file__).resolve().parent / ".chroma"
-COLLECTION = "aventro"
+COLLECTION = os.environ.get("RAG_COLLECTION", "aventro")
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"   # 384-dim, ~90MB, Apache-2.0
 
 
@@ -73,6 +77,9 @@ def load(formats: list[str], dedupe: bool) -> list[dict]:
         docs: list[dict] = []
         for fmt in formats:
             folder = CORPUS / fmt
+            # B1: a flat corpus (files directly in CORPUS, no md/ pdf/ subfolders)
+            if not folder.exists() and any(CORPUS.glob(f"*.{fmt}")):
+                folder = CORPUS
             if not folder.exists():
                 say(f"  [red]missing {folder}[/red] — run simple_rag/fetch_corpus.py")
                 sys.exit(1)

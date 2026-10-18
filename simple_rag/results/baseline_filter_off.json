@@ -1,0 +1,771 @@
+{
+  "mode": "off",
+  "version_aware": false,
+  "k": 4,
+  "collection": "kafka",
+  "corpus": "simple_rag/corpus/kafka",
+  "embed_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "golden_sha1": "850c67f2eab21aa1a6afabd481e5c3efccb7e0ba",
+  "git_commit": "db846c1",
+  "summary": {
+    "superseded_chunks": 41,
+    "total_chunks": 84,
+    "superseded_rate_pct": 48.8,
+    "superseded_cases": {
+      "passed": 0,
+      "cases": 9
+    },
+    "exact_string": {
+      "passed": 7,
+      "cases": 7
+    },
+    "multi_hop": {
+      "passed": 0,
+      "cases": 3
+    },
+    "median_retrieval_ms": 143.8
+  },
+  "cases": [
+    {
+      "id": "kafka-001",
+      "type": "superseded",
+      "question": "Broker 4's data volume just hit 87%. Should that have paged someone?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded disk-capacity-2025.md"
+      ],
+      "ms": 261.3,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "disk-capacity.md",
+          "superseded": false,
+          "similarity": 0.4123
+        },
+        {
+          "rank": 2,
+          "file": "disk-capacity-2025.md",
+          "superseded": true,
+          "similarity": 0.4014
+        },
+        {
+          "rank": 3,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.3434
+        },
+        {
+          "rank": 4,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.3343
+        }
+      ]
+    },
+    {
+      "id": "kafka-002",
+      "type": "superseded",
+      "question": "Our payments consumers are about 8 minutes behind, roughly 30,000 messages. Does that page anyone?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded consumer-lag-alerting-2024.md"
+      ],
+      "ms": 143.8,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "consumer-lag-alerting-2024.md",
+          "superseded": true,
+          "similarity": 0.4263
+        },
+        {
+          "rank": 2,
+          "file": "consumer-lag-alerting.md",
+          "superseded": false,
+          "similarity": 0.4071
+        },
+        {
+          "rank": 3,
+          "file": "consumer-lag-alerting.md",
+          "superseded": false,
+          "similarity": 0.3175
+        },
+        {
+          "rank": 4,
+          "file": "oncall-escalation.md",
+          "superseded": false,
+          "similarity": 0.2634
+        }
+      ]
+    },
+    {
+      "id": "kafka-003",
+      "type": "superseded",
+      "question": "I created a topic and never set retention. How long will messages stay around?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded topic-retention-2024.md"
+      ],
+      "ms": 143.8,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "topic-retention.md",
+          "superseded": false,
+          "similarity": 0.5331
+        },
+        {
+          "rank": 2,
+          "file": "topic-retention-2024.md",
+          "superseded": true,
+          "similarity": 0.5091
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.3104
+        },
+        {
+          "rank": 4,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.2922
+        }
+      ]
+    },
+    {
+      "id": "kafka-004",
+      "type": "superseded",
+      "question": "Broker 2 just rejoined after its restart. How long until I can bounce broker 3?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded broker-rolling-restart-2025.md"
+      ],
+      "ms": 156.9,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.546
+        },
+        {
+          "rank": 2,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.4998
+        },
+        {
+          "rank": 3,
+          "file": "oncall-escalation-2025.md",
+          "superseded": true,
+          "similarity": 0.3713
+        },
+        {
+          "rank": 4,
+          "file": "oncall-escalation.md",
+          "superseded": false,
+          "similarity": 0.3445
+        }
+      ]
+    },
+    {
+      "id": "kafka-005",
+      "type": "superseded",
+      "question": "What host and port do I put in my new producer's bootstrap config?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded listeners-and-auth-2024.md"
+      ],
+      "ms": 49.1,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "listeners-and-auth.md",
+          "superseded": false,
+          "similarity": 0.2929
+        },
+        {
+          "rank": 2,
+          "file": "listeners-and-auth-2024.md",
+          "superseded": true,
+          "similarity": 0.2697
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.1845
+        },
+        {
+          "rank": 4,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.1772
+        }
+      ]
+    },
+    {
+      "id": "kafka-006",
+      "type": "superseded",
+      "question": "I'm spinning up a topic with the standard settings. How many partitions and what min ISR?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded topic-creation-standards-2024.md"
+      ],
+      "ms": 146.7,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "disk-capacity.md",
+          "superseded": false,
+          "similarity": 0.2872
+        },
+        {
+          "rank": 2,
+          "file": "disk-capacity-2025.md",
+          "superseded": true,
+          "similarity": 0.2683
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.2469
+        },
+        {
+          "rank": 4,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.2416
+        }
+      ]
+    },
+    {
+      "id": "kafka-007",
+      "type": "superseded",
+      "question": "What URL should my serializer use to reach the schema registry?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded schema-registry-2024.md"
+      ],
+      "ms": 153.2,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "schema-registry.md",
+          "superseded": false,
+          "similarity": 0.4337
+        },
+        {
+          "rank": 2,
+          "file": "schema-registry-2024.md",
+          "superseded": true,
+          "similarity": 0.3914
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.1848
+        },
+        {
+          "rank": 4,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.1746
+        }
+      ]
+    },
+    {
+      "id": "kafka-008",
+      "type": "superseded",
+      "question": "I'm primary on-call and Kafka just paged me. How long do I have to acknowledge?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded oncall-escalation-2025.md"
+      ],
+      "ms": 165.4,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "oncall-escalation-2025.md",
+          "superseded": true,
+          "similarity": 0.6269
+        },
+        {
+          "rank": 2,
+          "file": "oncall-escalation.md",
+          "superseded": false,
+          "similarity": 0.5734
+        },
+        {
+          "rank": 3,
+          "file": "consumer-lag-alerting-2024.md",
+          "superseded": true,
+          "similarity": 0.4728
+        },
+        {
+          "rank": 4,
+          "file": "consumer-lag-alerting.md",
+          "superseded": false,
+          "similarity": 0.4718
+        }
+      ]
+    },
+    {
+      "id": "kafka-009",
+      "type": "superseded",
+      "question": "Which PagerDuty service do I trigger for a production Kafka problem?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded oncall-escalation-2025.md"
+      ],
+      "ms": 49.0,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "oncall-escalation-2025.md",
+          "superseded": true,
+          "similarity": 0.6092
+        },
+        {
+          "rank": 2,
+          "file": "oncall-escalation.md",
+          "superseded": false,
+          "similarity": 0.5833
+        },
+        {
+          "rank": 3,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.5575
+        },
+        {
+          "rank": 4,
+          "file": "disk-capacity.md",
+          "superseded": false,
+          "similarity": 0.5486
+        }
+      ]
+    },
+    {
+      "id": "kafka-010",
+      "type": "exact_string",
+      "question": "Can producers auto-create topics on prod? What's the broker setting?",
+      "pass": true,
+      "reasons": [],
+      "ms": 49.0,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.5436
+        },
+        {
+          "rank": 2,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.5224
+        },
+        {
+          "rank": 3,
+          "file": "schema-registry-2024.md",
+          "superseded": true,
+          "similarity": 0.377
+        },
+        {
+          "rank": 4,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.3496
+        }
+      ]
+    },
+    {
+      "id": "kafka-011",
+      "type": "exact_string",
+      "question": "Which mount should I watch for Kafka broker disk alerts?",
+      "pass": true,
+      "reasons": [],
+      "ms": 142.5,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "disk-capacity.md",
+          "superseded": false,
+          "similarity": 0.5452
+        },
+        {
+          "rank": 2,
+          "file": "disk-capacity-2025.md",
+          "superseded": true,
+          "similarity": 0.5367
+        },
+        {
+          "rank": 3,
+          "file": "consumer-lag-alerting-2024.md",
+          "superseded": true,
+          "similarity": 0.5008
+        },
+        {
+          "rank": 4,
+          "file": "consumer-lag-alerting.md",
+          "superseded": false,
+          "similarity": 0.4985
+        }
+      ]
+    },
+    {
+      "id": "kafka-012",
+      "type": "exact_string",
+      "question": "What command tells me whether a lagging group's consumer pods are actually running?",
+      "pass": true,
+      "reasons": [],
+      "ms": 50.3,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "consumer-lag-alerting.md",
+          "superseded": false,
+          "similarity": 0.7455
+        },
+        {
+          "rank": 2,
+          "file": "consumer-lag-alerting-2024.md",
+          "superseded": true,
+          "similarity": 0.5799
+        },
+        {
+          "rank": 3,
+          "file": "consumer-lag-alerting.md",
+          "superseded": false,
+          "similarity": 0.5701
+        },
+        {
+          "rank": 4,
+          "file": "oncall-escalation.md",
+          "superseded": false,
+          "similarity": 0.3106
+        }
+      ]
+    },
+    {
+      "id": "kafka-013",
+      "type": "exact_string",
+      "question": "What's the registry subject for the value schema of topic orders.v1?",
+      "pass": true,
+      "reasons": [],
+      "ms": 51.0,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "schema-registry-2024.md",
+          "superseded": true,
+          "similarity": 0.6775
+        },
+        {
+          "rank": 2,
+          "file": "schema-registry.md",
+          "superseded": false,
+          "similarity": 0.6346
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.4789
+        },
+        {
+          "rank": 4,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.4627
+        }
+      ]
+    },
+    {
+      "id": "kafka-014",
+      "type": "exact_string",
+      "question": "My app can't connect and logs a node -1 error. What's the exact message, and what does it usually mean?",
+      "pass": true,
+      "reasons": [],
+      "ms": 145.8,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "listeners-and-auth-2024.md",
+          "superseded": true,
+          "similarity": 0.4836
+        },
+        {
+          "rank": 2,
+          "file": "listeners-and-auth.md",
+          "superseded": false,
+          "similarity": 0.4783
+        },
+        {
+          "rank": 3,
+          "file": "consumer-lag-alerting-2024.md",
+          "superseded": true,
+          "similarity": 0.2223
+        },
+        {
+          "rank": 4,
+          "file": "oncall-escalation.md",
+          "superseded": false,
+          "similarity": 0.2206
+        }
+      ]
+    },
+    {
+      "id": "kafka-015",
+      "type": "exact_string",
+      "question": "What's the change template ID for a broker rolling restart?",
+      "pass": true,
+      "reasons": [],
+      "ms": 157.1,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.5917
+        },
+        {
+          "rank": 2,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.5368
+        },
+        {
+          "rank": 3,
+          "file": "schema-registry-2024.md",
+          "superseded": true,
+          "similarity": 0.3183
+        },
+        {
+          "rank": 4,
+          "file": "topic-retention-2024.md",
+          "superseded": true,
+          "similarity": 0.3123
+        }
+      ]
+    },
+    {
+      "id": "kafka-016",
+      "type": "exact_string",
+      "question": "Where in Vault do I find my app's Kafka client credentials?",
+      "pass": true,
+      "reasons": [],
+      "ms": 48.4,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "listeners-and-auth.md",
+          "superseded": false,
+          "similarity": 0.5749
+        },
+        {
+          "rank": 2,
+          "file": "listeners-and-auth-2024.md",
+          "superseded": true,
+          "similarity": 0.5319
+        },
+        {
+          "rank": 3,
+          "file": "schema-registry.md",
+          "superseded": false,
+          "similarity": 0.3963
+        },
+        {
+          "rank": 4,
+          "file": "schema-registry-2024.md",
+          "superseded": true,
+          "similarity": 0.3619
+        }
+      ]
+    },
+    {
+      "id": "kafka-017",
+      "type": "multi_hop",
+      "question": "Disk on broker 3 just crossed the page line. What is that line, and which PagerDuty service gets the page?",
+      "pass": false,
+      "reasons": [
+        "missing oncall-escalation.md",
+        "retrieved superseded disk-capacity-2025.md"
+      ],
+      "ms": 150.6,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "disk-capacity.md",
+          "superseded": false,
+          "similarity": 0.3186
+        },
+        {
+          "rank": 2,
+          "file": "disk-capacity-2025.md",
+          "superseded": true,
+          "similarity": 0.3046
+        },
+        {
+          "rank": 3,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.2876
+        },
+        {
+          "rank": 4,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.2689
+        }
+      ]
+    },
+    {
+      "id": "kafka-018",
+      "type": "multi_hop",
+      "question": "New topic, all defaults: how many partitions does it get and how long is data kept?",
+      "pass": false,
+      "reasons": [
+        "missing topic-creation-standards.md",
+        "retrieved superseded topic-retention-2024.md"
+      ],
+      "ms": 143.7,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "disk-capacity.md",
+          "superseded": false,
+          "similarity": 0.3487
+        },
+        {
+          "rank": 2,
+          "file": "disk-capacity-2025.md",
+          "superseded": true,
+          "similarity": 0.3456
+        },
+        {
+          "rank": 3,
+          "file": "topic-retention.md",
+          "superseded": false,
+          "similarity": 0.2892
+        },
+        {
+          "rank": 4,
+          "file": "topic-retention-2024.md",
+          "superseded": true,
+          "similarity": 0.2479
+        }
+      ]
+    },
+    {
+      "id": "kafka-019",
+      "type": "multi_hop",
+      "question": "I'm rolling the brokers for a TLS change. How long do I wait between brokers, and which client port should be healthy afterwards?",
+      "pass": false,
+      "reasons": [
+        "retrieved superseded broker-rolling-restart-2025.md",
+        "retrieved superseded listeners-and-auth-2024.md"
+      ],
+      "ms": 156.4,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.4244
+        },
+        {
+          "rank": 2,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.4102
+        },
+        {
+          "rank": 3,
+          "file": "listeners-and-auth.md",
+          "superseded": false,
+          "similarity": 0.392
+        },
+        {
+          "rank": 4,
+          "file": "listeners-and-auth-2024.md",
+          "superseded": true,
+          "similarity": 0.3778
+        }
+      ]
+    },
+    {
+      "id": "kafka-020",
+      "type": "unanswerable",
+      "question": "What's the largest message size our brokers will accept?",
+      "pass": null,
+      "reasons": [],
+      "ms": 47.2,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.2779
+        },
+        {
+          "rank": 2,
+          "file": "topic-retention.md",
+          "superseded": false,
+          "similarity": 0.2685
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.2638
+        },
+        {
+          "rank": 4,
+          "file": "disk-capacity-2025.md",
+          "superseded": true,
+          "similarity": 0.262
+        }
+      ]
+    },
+    {
+      "id": "kafka-021",
+      "type": "unanswerable",
+      "question": "How many brokers are in the production cluster?",
+      "pass": null,
+      "reasons": [],
+      "ms": 157.8,
+      "retrieved": [
+        {
+          "rank": 1,
+          "file": "broker-rolling-restart.md",
+          "superseded": false,
+          "similarity": 0.4485
+        },
+        {
+          "rank": 2,
+          "file": "broker-rolling-restart-2025.md",
+          "superseded": true,
+          "similarity": 0.4483
+        },
+        {
+          "rank": 3,
+          "file": "topic-creation-standards-2024.md",
+          "superseded": true,
+          "similarity": 0.364
+        },
+        {
+          "rank": 4,
+          "file": "topic-creation-standards.md",
+          "superseded": false,
+          "similarity": 0.3556
+        }
+      ]
+    }
+  ]
+}
