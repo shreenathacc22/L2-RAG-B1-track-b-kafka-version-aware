@@ -1,0 +1,17 @@
+<div class="flow">
+ <div class="lane"><span class="lbl">INGEST<br><small style="font-weight:400;color:#6b7280">rag.py ingest</small></span>
+  <div class="box src">16 runbooks<small>corpus/kafka/</small></div><span class="arr">→</span>
+  <div class="box">load</div><span class="arr">→</span>
+  <div class="box meta">attach metadata<small>from manifest.json · Step 8</small></div><span class="arr">→</span>
+  <div class="box">chunk</div><span class="arr">→</span>
+  <div class="box">embed<small>all-MiniLM-L6-v2</small></div><span class="arr">→</span>
+  <div class="box src">Chroma<small>doc · version · effective_date · superseded</small></div></div>
+ <div class="lane"><span class="lbl">QUERY<br><small style="font-weight:400;color:#6b7280">ask / b1_eval</small></span>
+  <div class="box src">question</div><span class="arr">→</span>
+  <div class="box">embed</div><span class="arr">→</span>
+  <div class="box new">VERSION FILTER<small style="color:#8a4510">superseded = False · Steps 9–10</small></div><span class="arr">→</span>
+  <div class="box">top-4 by similarity</div><span class="arr">→</span>
+  <div class="box">LLM answer<small>with citations</small></div></div>
+ <div class="legend">Orange = the one new stage B1 adds. Green = the metadata it needs. Grey = unchanged lab code.
+ The filter switches OFF (baseline) or ON (fixed) for the ablation.</div>
+</div>

@@ -1,3 +1,8 @@
+> **B1 Track B (Shreenath Shetty):** this branch extends `simple_rag/` with **version-aware retrieval** for a
+> Kafka runbook corpus. Superseded chunks retrieved: **48.8% → 0.0%**; exact-string retrieval unchanged (7/7).
+> Report: [`simple_rag/results/B1_REPORT.md`](simple_rag/results/B1_REPORT.md) · Docs and rebuild tools: [`b1-track-b/`](b1-track-b/)
+> · Runnable package: branch `rag-deployment`. Everything below is the original class README.
+
 # Modern AI Pro — Level 2 · AI Practitioner Labs
 
 The lab kit for the **AI Practitioner** weekend (Level 2 of the Modern AI Pro ladder).

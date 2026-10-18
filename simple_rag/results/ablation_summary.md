@@ -12,7 +12,7 @@ Only one thing changes between the runs: `where={"superseded": False}` on the Ch
 | Multi-hop cases passed | 0/3 (0%) | 3/3 (100%) | improve |
 | Median retrieval latency (fair, 105 calls each, interleaved) | 50.2 ms | 51.1 ms | small change |
 
-Runs: OFF at commit `db846c1`, ON at commit `c2ce3a2`; same golden sha1 in both: **True**.
+Runs: OFF at commit `2cff45a`, ON at commit `3e269fd`; same golden sha1 in both: **True**.
 
 ## Case by case
 

@@ -33,7 +33,7 @@ removes stale documents without hurting normal retrieval.
 | 8 Kafka runbook subjects × current and old version (fictional company "Halcyon") | `simple_rag/corpus/kafka/*.md` | 3 |
 | Version metadata (`doc`, `version`, `effective_date`, `superseded`), kept outside the text | `simple_rag/corpus/kafka/manifest.json` | 4 |
 | 21 golden cases: 9 superseded, 7 exact_string, 3 multi_hop, 2 unanswerable | `simple_rag/golden_kafka.jsonl` | 5 |
-| Golden set frozen in its own commit before any `rag.py` change | `db846c1` | 6 |
+| Golden set frozen in its own commit before any `rag.py` change | `2cff45a` | 6 |
 | Evaluator (retrieval only, deterministic) and BEFORE run | `simple_rag/b1_eval.py`, `results/baseline_filter_off.json` | 7 |
 | Manifest fields attached to every chunk in Chroma | `rag.py` `b1_metadata()` | 8 |
 | `retrieve(version_aware=...)`: ON adds the where-clause, OFF is the original query | `rag.py` | 9–10 |
@@ -48,8 +48,8 @@ directly in the database.
 
 - **One variable.** Embedder (`all-MiniLM-L6-v2`), chunking (180 words), k = 4, prompt, corpus
   and golden set are identical in both runs. Only the `where` clause differs.
-- **Frozen first.** The golden set (sha1 `850c67f2…`) was committed in `db846c1`, before the
-  first B1 change to `rag.py` (`edb77db`). Both result files record the same sha1.
+- **Frozen first.** The golden set (sha1 `850c67f2…`) was committed in `2cff45a`, before the
+  first B1 change to `rag.py` (`8c97952`). Both result files record the same sha1.
 - **OFF is the original.** After metadata (Step 8) and after the filter code (Steps 9–10),
   the OFF run was re-checked and was identical to the Step 7 baseline: all 21 cases, same files,
   same ranks.
@@ -81,6 +81,18 @@ directly in the database.
    filter always serves the current version. `effective_date` is stored so this can be added
    later.
 
+## Code on GitHub
+
+Public repo: https://github.com/shreenathacc22/L2-RAG-B1-track-b-kafka-version-aware
+
+| Branch | Contents |
+|---|---|
+| `main` | Overview and links |
+| `track-b-kafka-version-aware` | This project: one commit per step, results, docs and rebuild tools (`b1-track-b/`) |
+| `rag-deployment` | The runnable version-aware RAG (`run.sh`, README) |
+
+Track A (front-matter version): https://github.com/shreenathacc22/L2-RAG-B1-version-aware-retrieval
+
 ## Reproduce
 
 ```bash
@@ -106,7 +118,7 @@ python simple_rag/b1_eval.py --table                 # results/ablation_summary.
 | Existing simple_rag runs before modification | ✅ ingest / ask / eval (retrieval 2/6, the lab's start) |
 | Own versioned corpus | ✅ 16 Kafka runbooks, not Meridian or Aventro |
 | At least 15 golden cases | ✅ 21 |
-| Golden set committed before retrieval changes | ✅ `db846c1` before `edb77db` |
+| Golden set committed before retrieval changes | ✅ `2cff45a` before `8c97952` |
 | Baseline (filter OFF) captured | ✅ `results/baseline_filter_off.json` |
 | version / effective_date / superseded in vector-store metadata | ✅ checked in Chroma (`b1_check.py --chroma`) |
 | Query-time metadata filter | ✅ `where={"superseded": False}` |

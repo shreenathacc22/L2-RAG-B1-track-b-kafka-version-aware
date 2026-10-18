@@ -18,3 +18,4 @@ simple_rag/.chroma/
 # stock_rag
 stock_traces.jsonl
 stock_rag/predictions.jsonl
+.env.*

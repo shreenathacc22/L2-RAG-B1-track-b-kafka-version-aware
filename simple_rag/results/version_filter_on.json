@@ -6,7 +6,7 @@
   "corpus": "simple_rag/corpus/kafka",
   "embed_model": "sentence-transformers/all-MiniLM-L6-v2",
   "golden_sha1": "850c67f2eab21aa1a6afabd481e5c3efccb7e0ba",
-  "git_commit": "c2ce3a2",
+  "git_commit": "3e269fd",
   "summary": {
     "superseded_chunks": 0,
     "total_chunks": 84,
