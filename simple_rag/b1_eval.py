@@ -4,7 +4,9 @@
     python simple_rag/rag.py ingest --formats md     # once, before evaluating
     python simple_rag/b1_eval.py --off               # BEFORE: filter OFF  (Step 7)
     python simple_rag/b1_eval.py --on                # AFTER:  filter ON   (Step 11)
-    python simple_rag/b1_eval.py                     # both, plus the ablation table (Step 12)
+    python simple_rag/b1_eval.py                     # both, plus the ablation table
+    python simple_rag/b1_eval.py --latency 5         # fair latency: OFF/ON alternated, 5 rounds (Step 12)
+    python simple_rag/b1_eval.py --table             # ablation_summary.md from the SAVED results (Step 12)
 
 Retrieval only: no LLM, no API key, deterministic. Which retrieved chunks are
 superseded is looked up in corpus/kafka/manifest.json by file name, so this
@@ -132,7 +134,25 @@ def show(r: dict) -> None:
     print(f"  median retrieval latency     {s['median_retrieval_ms']} ms")
 
 
-def table(off: dict, on: dict) -> str:
+def latency(rounds: int) -> dict:
+    """Fair timing: every question runs OFF then ON back to back, `rounds` times, in one
+    process, so warm caches and machine load hit both modes equally."""
+    cases = [json.loads(l) for l in GOLDEN.read_text(encoding="utf-8").splitlines() if l.strip()]
+    retrieve("warm-up query", False)
+    retrieve("warm-up query", True)
+    ms = {"off": [], "on": []}
+    for _ in range(rounds):
+        for c in cases:
+            for mode in ("off", "on"):
+                ms[mode].append(retrieve(c["question"], mode == "on")[1])
+    q = lambda xs, p: round(sorted(xs)[min(len(xs) - 1, int(p * len(xs)))], 1)
+    out = {"rounds": rounds, "calls_per_mode": len(ms["off"]),
+           **{m: {"median_ms": round(statistics.median(v), 1), "p90_ms": q(v, 0.9)} for m, v in ms.items()}}
+    out["median_delta_ms"] = round(out["on"]["median_ms"] - out["off"]["median_ms"], 1)
+    return out
+
+
+def table(off: dict, on: dict, lat: dict | None = None) -> str:
     a, b = off["summary"], on["summary"]
     pct = lambda d: f"{d['passed']}/{d['cases']} ({round(100 * d['passed'] / d['cases'])}%)"
     lines = [
@@ -146,8 +166,21 @@ def table(off: dict, on: dict) -> str:
         f"| Superseded cases passed | {pct(a['superseded_cases'])} | {pct(b['superseded_cases'])} | improve |",
         f"| Exact-string cases passed | {pct(a['exact_string'])} | {pct(b['exact_string'])} | stay flat |",
         f"| Multi-hop cases passed | {pct(a['multi_hop'])} | {pct(b['multi_hop'])} | improve |",
-        f"| Median retrieval latency | {a['median_retrieval_ms']} ms | {b['median_retrieval_ms']} ms | small change |",
+        (f"| Median retrieval latency (fair, {lat['calls_per_mode']} calls each, interleaved) | "
+         f"{lat['off']['median_ms']} ms | {lat['on']['median_ms']} ms | small change |" if lat else
+         f"| Median retrieval latency (single runs) | {a['median_retrieval_ms']} ms | {b['median_retrieval_ms']} ms | small change |"),
+        "", f"Runs: OFF at commit `{off['git_commit']}`, ON at commit `{on['git_commit']}`; "
+            f"same golden sha1 in both: **{off['golden_sha1'] == on['golden_sha1']}**.",
+        "", "## Case by case", "",
+        "| Case | Type | OFF | ON | Superseded files retrieved OFF -> ON |", "|---|---|---|---|---|",
     ]
+    word = lambda x: "-" if x["pass"] is None else ("PASS" if x["pass"] else "FAIL")
+    for x, y in zip(off["cases"], on["cases"]):
+        so = sum(h["superseded"] for h in x["retrieved"]); sn = sum(h["superseded"] for h in y["retrieved"])
+        lines.append(f"| {x['id']} | {x['type']} | {word(x)} | {word(y)} | {so} -> {sn} |")
+    still = [y["id"] for y in on["cases"] if y["pass"] is False]
+    lines += ["", f"Failing cases with the filter ON: **{', '.join(still) if still else 'none'}**. "
+              "Unanswerable cases (kafka-020, kafka-021) are not scored on retrieval; they need an answer-level judge."]
     return "\n".join(lines) + "\n"
 
 
@@ -156,8 +189,23 @@ def main() -> None:
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--off", action="store_true", help="filter OFF only (BEFORE)")
     g.add_argument("--on", action="store_true", help="filter ON only (AFTER)")
+    g.add_argument("--table", action="store_true", help="write ablation_summary.md from saved results")
+    g.add_argument("--latency", type=int, metavar="N", help="fair OFF/ON latency, N interleaved rounds")
     ap.add_argument("--out", type=Path, default=RESULTS, help="results folder")
     a = ap.parse_args()
+    a.out.mkdir(parents=True, exist_ok=True)
+    if a.latency:
+        lat = latency(a.latency)
+        (a.out / "latency.json").write_text(json.dumps(lat, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps(lat, indent=2)); print(f"  wrote {a.out / 'latency.json'}")
+        return
+    if a.table:
+        off, on = (json.loads((a.out / FILES[m]).read_text(encoding="utf-8")) for m in ("off", "on"))
+        lat_f = a.out / "latency.json"
+        lat = json.loads(lat_f.read_text(encoding="utf-8")) if lat_f.exists() else None
+        (a.out / "ablation_summary.md").write_text(table(off, on, lat), encoding="utf-8")
+        print(table(off, on, lat)); print(f"  wrote {a.out / 'ablation_summary.md'}")
+        return
     modes = ["off"] if a.off else ["on"] if a.on else ["off", "on"]
     a.out.mkdir(parents=True, exist_ok=True)
     done = {}

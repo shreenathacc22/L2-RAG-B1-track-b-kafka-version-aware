@@ -1,0 +1,13 @@
+{
+  "rounds": 5,
+  "calls_per_mode": 105,
+  "off": {
+    "median_ms": 50.2,
+    "p90_ms": 153.4
+  },
+  "on": {
+    "median_ms": 51.1,
+    "p90_ms": 55.6
+  },
+  "median_delta_ms": 0.9
+}
