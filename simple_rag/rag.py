@@ -401,16 +401,26 @@ SYSTEM = (
 )
 
 
-def retrieve(query: str, k: int = 4) -> list[dict]:
+def retrieve(query: str, k: int = 4, version_aware: bool = False) -> list[dict]:
+    """B1 (Steps 9-10): version_aware=True adds ONE condition to the Chroma query,
+    where={"superseded": False}, so superseded chunks are excluded BEFORE similarity
+    ranking. They cannot compete, so they cannot win. version_aware=False runs the
+    original query unchanged, which is what makes the OFF/ON comparison an ablation.
+    Embedder, query text and k are identical in both modes."""
     embedder()   # warm before the clock starts, same reason as embed_all()
-    with stage("retrieve", query=query, k=k) as obs:
+    with stage("retrieve", query=query, k=k, version_aware=version_aware) as obs:
         t0 = time.perf_counter()
         qv = embed([query], label="query")[0]
         embed_ms = round((time.perf_counter() - t0) * 1000)
 
         t1 = time.perf_counter()
-        res = collection().query(query_embeddings=[qv], n_results=k,
-                                 include=["documents", "metadatas", "distances"])
+        if version_aware:      # B1 ON: only current chunks are eligible
+            res = collection().query(query_embeddings=[qv], n_results=k,
+                                     where={"superseded": False},
+                                     include=["documents", "metadatas", "distances"])
+        else:                  # B1 OFF: the original query, untouched
+            res = collection().query(query_embeddings=[qv], n_results=k,
+                                     include=["documents", "metadatas", "distances"])
         search_ms = round((time.perf_counter() - t1) * 1000)
 
         hits = [{"rank": i + 1, "text": d, "distance": round(dist, 4),
@@ -435,8 +445,9 @@ def retrieve(query: str, k: int = 4) -> list[dict]:
         return hits
 
 
-def answer(query: str, k: int = 4, hits: list[dict] | None = None) -> str:
-    hits = retrieve(query, k=k) if hits is None else hits
+def answer(query: str, k: int = 4, hits: list[dict] | None = None,
+           version_aware: bool = False) -> str:
+    hits = retrieve(query, k=k, version_aware=version_aware) if hits is None else hits
     from _kit import chat, client, meter          # the class LLM proxy + its meter
     with stage("generate", query=query) as obs:
         ctx = "\n\n".join(f"[{h['rank']}] ({h['doc']})\n{h['text']}" for h in hits)
@@ -638,7 +649,7 @@ def cmd_ask(a) -> None:
         say("[red]The collection is empty.[/red] Run: python simple_rag/rag.py ingest")
         sys.exit(1)
     if a.question:
-        answer(" ".join(a.question), k=a.k)
+        answer(" ".join(a.question), k=a.k, version_aware=a.version_aware)
         return
     say("[bold]Ask the Aventro corpus.[/bold] [dim]blank line or Ctrl-D to quit[/dim]")
     while True:
@@ -648,7 +659,7 @@ def cmd_ask(a) -> None:
             break
         if not q:
             break
-        answer(q, k=a.k)
+        answer(q, k=a.k, version_aware=a.version_aware)
 
 
 def cmd_inspect(a) -> None:
@@ -711,6 +722,8 @@ if __name__ == "__main__":
     q = sub.add_parser("ask", help="retrieve + answer")
     q.add_argument("question", nargs="*")
     q.add_argument("-k", type=int, default=4, help="chunks to retrieve")
+    q.add_argument("--version-aware", action="store_true",
+                   help="B1: retrieve only current (non-superseded) chunks")
     q.set_defaults(func=cmd_ask)
 
     g = sub.add_parser("eval", help="run the 6-case golden set")
